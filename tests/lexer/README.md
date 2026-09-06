@@ -4,11 +4,7 @@ Estes testes verificam se o lexer reconhece as palavras reservadas, os operadore
 
 ## Pré-requisito
 
-Execute os comandos a partir da raiz do projeto:
-
-```bash
-cd /home/lucas/Desktop/HailMary/Compiladores
-```
+Execute os comandos a partir da raiz do projeto
 
 É necessário ter `flex`, `gcc` e `make` instalados.
 
