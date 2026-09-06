@@ -1,10 +1,9 @@
-/*analisador lexico*/ 
 
 %{
 #include <stdio.h>
 
 /*por enquanto utilizando um enum mas substituir pelo arquivo do bison*/
-#include "tokens.h"
+#include "enum/tokens.h"
 
 //#define ID 3
 //#define NUMERO 4
@@ -66,7 +65,7 @@ int main(int argc, char **argv){
     int token;
 
     while((token = yylex()) != 0){ //yylex consome entrada ate encontrar num valido, em caso de EOF entao yylex = 0
-        printf("lexema: %s\n", yytext);
+        printf("lexema: %s | token: %d\n", yytext, token);
         
     }
 

@@ -78,31 +78,50 @@ mensagem de erro, mas o lexer continua processando a entrada.
 
 ## Como rodar
 
-### Gerar e compilar o lexer
+Os comandos devem ser executados na raiz do projeto:
 
-Dentro desta pasta, execute:
+### Compilar o lexer
+
+Gera o codigo do Flex e cria o executavel `build/lexico`:
 
 ```bash
-flex hello.l
-gcc lex.yy.c -o lexico
+make lexer
 ```
 
-Isso gera `lex.yy.c` e cria o executavel `lexico`.
+### Compilar o parser
 
-Esses dois arquivos sao gerados e estao listados no `.gitignore`.
+Gera e compila os arquivos do Bison:
+
+```bash
+make parser
+```
+
+### Compilar o projeto inteiro
+
+Executa os alvos do lexer e do parser:
+
+```bash
+make
+```
+
+Para remover todos os arquivos gerados:
+
+```bash
+make clean
+```
 
 ### Testar pelo terminal
 
 Passe a entrada pela entrada padrao:
 
 ```bash
-echo "int contador = 42;" | ./lexico
+echo "int contador = 42;" | ./build/lexico
 ```
 
 Ou digite varias linhas manualmente:
 
 ```bash
-./lexico
+./build/lexico
 ```
 
 Finalize a entrada com `Ctrl+D` no Linux.
