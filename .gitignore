@@ -1,3 +1,4 @@
 lexico
 lex.yy.c
 build/
+trash/
