@@ -33,6 +33,8 @@
 "!="            { return TOKEN_DIFERENTE;       }
 "<="            { return TOKEN_MENOR_IGUAL;     }
 ">="            { return TOKEN_MAIOR_IGUAL;     }
+"<"             { return TOKEN_MENOR;           }
+">"             { return TOKEN_MAIOR;           }
 "="             { return TOKEN_ATRIB;           }
 "+"             { return TOKEN_MAIS;            }
 "-"             { return TOKEN_MENOS;           }
