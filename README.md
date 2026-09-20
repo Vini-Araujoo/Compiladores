@@ -80,28 +80,13 @@ mensagem de erro, mas o lexer continua processando a entrada.
 
 Os comandos devem ser executados na raiz do projeto:
 
-### Compilar o lexer
-
-Gera o codigo do Flex e cria o executavel `build/lexico`:
-
-```bash
-make lexer
-```
-
 ### Compilar o parser
 
-Gera e compila os arquivos do Bison:
-
-```bash
-make parser
-```
-
-### Compilar o projeto inteiro
-
-Executa os alvos do lexer e do parser:
+Gera e compila os arquivos do Flex e Bison no binário `build/parser`:
 
 ```bash
 make
+# ou: make parser
 ```
 
 Para remover todos os arquivos gerados:
@@ -110,18 +95,16 @@ Para remover todos os arquivos gerados:
 make clean
 ```
 
-### Testar pelo terminal
+### Testar manualmente pelo terminal
 
-Passe a entrada pela entrada padrao:
-
-```bash
-echo "int contador = 42;" | ./build/lexico
-```
-
-Ou digite varias linhas manualmente:
+Passe uma entrada pela entrada padrão:
 
 ```bash
-./build/lexico
+echo "int contador = 42;" | ./build/parser
 ```
 
-Finalize a entrada com `Ctrl+D` no Linux.
+Ou execute interativamente (finalize com `Ctrl+D`):
+
+```bash
+./build/parser
+```

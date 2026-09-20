@@ -2,3 +2,6 @@ lexico
 lex.yy.c
 build/
 trash/
+*.o
+*.output
+.DS_Store

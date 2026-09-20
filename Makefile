@@ -13,11 +13,14 @@ PARSER_GENERATED_C := $(BUILD_DIR)/parser.tab.c
 PARSER_GENERATED_H := $(BUILD_DIR)/parser.tab.h
 PARSER_BINARY := $(BUILD_DIR)/parser
 
-.PHONY: all parser clean
+.PHONY: all parser test clean
 
 all: parser
 
 parser: $(PARSER_BINARY)
+
+test: parser
+	@bash tests/parser/run-tests.sh $(ISSUE)
 
 $(PARSER_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(PARSER_GENERATED_C) $(LEXER_GENERATED) -o $@
