@@ -6,3 +6,4 @@ trash/
 *.output
 .DS_Store
 rep.md
+issues_*.md
