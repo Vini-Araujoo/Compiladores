@@ -1,3 +1,9 @@
+#ifndef TOKENS_H
+#define TOKENS_H
+
+/* Os tokens do parser sao gerados por Bison em build/parser.tab.h. */
+
+#endif
 #ifndef TOKENS
 #define TOKENS
 

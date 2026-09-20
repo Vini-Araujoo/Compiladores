@@ -2,36 +2,31 @@ CC := gcc
 FLEX := flex
 BISON := bison
 
-CFLAGS := -Wall -Wextra -I. -Ilexer
+CFLAGS := -Wall -Wextra -Ibuild
 BUILD_DIR := build
 
 LEXER_SOURCE := lexer/lexer.l
-TOKEN_HEADER := lexer/enum/tokens.h
 LEXER_GENERATED := $(BUILD_DIR)/lex.yy.c
-LEXER_BINARY := $(BUILD_DIR)/lexico
 
-PARSER_SOURCE := paser/paser.y
-PARSER_GENERATED_C := $(BUILD_DIR)/paser.tab.c
-PARSER_GENERATED_H := $(BUILD_DIR)/paser.tab.h
-PARSER_OBJECT := $(BUILD_DIR)/paser.tab.o
+PARSER_SOURCE := parser/parser.y
+PARSER_GENERATED_C := $(BUILD_DIR)/parser.tab.c
+PARSER_GENERATED_H := $(BUILD_DIR)/parser.tab.h
+PARSER_BINARY := $(BUILD_DIR)/parser
 
-.PHONY: all lexer parser clean
+.PHONY: all parser clean
 
-all: lexer parser
+all: parser
 
-lexer: $(LEXER_BINARY)
+parser: $(PARSER_BINARY)
 
-$(LEXER_BINARY): $(LEXER_SOURCE) $(TOKEN_HEADER) | $(BUILD_DIR)
-	$(FLEX) -o $(LEXER_GENERATED) $(LEXER_SOURCE)
-	$(CC) $(CFLAGS) $(LEXER_GENERATED) -o $@
-
-parser: $(PARSER_OBJECT)
+$(PARSER_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(PARSER_GENERATED_C) $(LEXER_GENERATED) -o $@
 
 $(PARSER_GENERATED_C) $(PARSER_GENERATED_H): $(PARSER_SOURCE) | $(BUILD_DIR)
 	$(BISON) -d -o $(PARSER_GENERATED_C) $(PARSER_SOURCE)
 
-$(PARSER_OBJECT): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H)
-	$(CC) $(CFLAGS) -c $(PARSER_GENERATED_C) -o $@
+$(LEXER_GENERATED): $(LEXER_SOURCE) $(PARSER_GENERATED_H) | $(BUILD_DIR)
+	$(FLEX) -o $(LEXER_GENERATED) $(LEXER_SOURCE)
 
 $(BUILD_DIR):
 	mkdir -p $@

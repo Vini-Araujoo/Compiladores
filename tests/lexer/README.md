@@ -56,7 +56,7 @@ Por exemplo, se `entrada.java` tiver `valore`, mas o arquivo
 parecida com esta:
 
 ```diff
--lexema: valres | token: 3
+lexema: valore | token: 3
 +lexema: valore | token: 3
 ```
 
@@ -73,8 +73,50 @@ diff -u tests/lexer/esperado/entrada.txt /tmp/saida.txt
 
 ## Organização
 
-- `palavras-reservadas.java`: tipos, controle de fluxo, modificadores e `new`.
-- `operadores.java`: operadores simples, compostos e relacionais.
-- `entrada.java`: arrays, `System.out`, `Scanner` e métodos `next...`.
-- `esperado/`: saídas esperadas geradas pelo lexer.
 - `run-tests.sh`: comando automatizado dos testes.
+
+# Testes antigos do lexer
+
+Esta pasta contém entradas e saídas de uma versão anterior do projeto, quando
+o lexer era executado diretamente pelo binário `build/lexico` e imprimia cada
+lexema e seu token.
+
+## Estado atual
+
+O ponto de entrada atual é o parser:
+
+```bash
+make
+./build/parser < arquivo.java
+```
+
+O lexer agora é chamado internamente pelo parser e não imprime mais tokens.
+Por isso, os arquivos `esperado/*.txt` e o script `run-tests.sh` desta pasta
+não são compatíveis com a estrutura atual. O comando abaixo falha porque o
+alvo `lexer` e o executável `build/lexico` não existem mais:
+
+```bash
+./tests/lexer/run-tests.sh
+```
+
+Além disso, as entradas `.java` desta pasta contêm vários comandos e são
+maiores do que a gramática atual do parser, que neste momento aceita apenas
+uma declaração no formato:
+
+```text
+int identificador = numero;
+```
+
+Exemplo funcional:
+
+```bash
+printf 'int x = 5;\n' | ./build/parser
+```
+
+## Próximos testes
+
+Quando a gramática do parser estiver implementada, estas entradas podem ser
+convertidas em testes sintáticos. Se a intenção for continuar testando apenas
+o lexer, será necessário criar um pequeno programa de teste que inclua
+`build/parser.tab.h`, chame `yylex()` e imprima os tokens para comparação com
+os arquivos em `esperado/`.
