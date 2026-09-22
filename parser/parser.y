@@ -129,18 +129,30 @@ membro_classe:
 declaracao_metodo:
       modificadores tipo_retorno ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
     ;
+
 lista_parametros:
+        %empty
+      | parametros_com_virgula
+    ;
+
+parametros_com_virgula:
+        parametro
+      | parametros_com_virgula TOKEN_VIRGULA parametro
+    ;
 
 parametro:
-
+        tipo ID
+      | tipo TOKEN_ABRE_COLCHETE TOKEN_FECHA_COLCHETE ID /*para String[] args*/  
+    
+    ;
 
 modificadores:
-    %empty
-    | modificadores modificador
-    | modificador
-
+        %empty
+      | modificadores modificador
+      | modificador
+    ; 
 modificador:
-      %empty
+        %empty
       | TOKEN_PUBLIC
       | TOKEN_PRIVATE
       | TOKEN_PROTECTED
@@ -148,10 +160,12 @@ modificador:
       | TOKEN_FINAL
 
 tipo_retorno:
+        tipo
+      | TOKEN_VOID
+    ;
 
 tipo:
-      | TOKEN_VOID
-      | TOKEN_DOUBLE
+        TOKEN_DOUBLE
       | TOKEN_INT
       | TOKEN_STRING_TIPO
       | TOKEN_LONG
@@ -160,7 +174,6 @@ tipo:
       | TOKEN_CHAR
       | TOKEN_FLOAT
     ;
-
 
 
 //Atributos da classe (STUB da Issue 1)
