@@ -127,7 +127,8 @@ membro_classe:
 
 
 declaracao_metodo:
-      modificadores tipo_retorno ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
+  modificadores tipo ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
+    | modificadores TOKEN_VOID ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
     ;
 
 lista_parametros:
@@ -157,11 +158,6 @@ modificador:
       | TOKEN_PROTECTED
       | TOKEN_STATIC
       | TOKEN_FINAL
-
-tipo_retorno:
-        tipo
-      | TOKEN_VOID
-    ;
 
 tipo:
         TOKEN_DOUBLE

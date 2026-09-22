@@ -1,3 +1,11 @@
-public class invalido_metodo_sem_parenteses {
+public class Teste {
+    void executar
+    {
+    }
+}
 
+public class Teste {
+    void executar
+    {
+    }
 }
