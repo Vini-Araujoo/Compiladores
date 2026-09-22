@@ -91,10 +91,8 @@
 
 [a-zA-Z_][a-zA-Z_0-9]*  { return ID; }
 [0-9]+                  { return NUMERO; }
-[ \t\n]+ {/* ignora espaços e quebra de linha */}
-
-. {printf("Erro: caractere desconhecido");/* ignora qualquer outro caractere */}
-
+[ \t\r\n]+      { /* ignora espaços, tabs e quebras de linha */ }
+.               { fprintf(stderr, "Caractere desconhecido: '%s' (ASCII: %d)\n", yytext, (unsigned char)yytext[0]); }
 %%
 
 int yywrap(void){

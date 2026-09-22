@@ -4,7 +4,7 @@ set -u
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PARSER="$ROOT_DIR/build/parser"
-ISSUE_INPUT="${1:-issue_3}"
+ISSUE_INPUT="${1:-issue_4}"
 
 if [[ "$ISSUE_INPUT" =~ ^[0-9]+$ ]]; then
     ISSUE_DIR="issue_$ISSUE_INPUT"

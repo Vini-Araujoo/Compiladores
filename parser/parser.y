@@ -107,8 +107,80 @@ void yyerror(const char *mensagem);
 /* Estrutura do programa e blocos */
 
 programa:
+    declaracao_classe
+    ;
+declaracao_classe:
+        TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
+      | TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
+      | TOKEN_PUBLIC TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE 
+      | TOKEN_PUBLIC TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
+    ;
+
+corpo_classe:
       %empty
-    | programa comando
+      | corpo_classe membro_classe
+    ;
+
+membro_classe:
+        declaracao_variavel
+      | declaracao_metodo  
+    ;
+
+
+declaracao_metodo:
+  modificadores tipo ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
+    | modificadores TOKEN_VOID ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
+    ;
+
+lista_parametros:
+        %empty
+      | parametros_com_virgula
+    ;
+
+parametros_com_virgula:
+        parametro
+      | parametros_com_virgula TOKEN_VIRGULA parametro
+    ;
+
+parametro:
+        tipo ID
+      | tipo TOKEN_ABRE_COLCHETE TOKEN_FECHA_COLCHETE ID /*para String[] args*/  
+    
+    ;
+
+modificadores:
+        %empty
+      | modificadores modificador
+    ; 
+    
+modificador:
+        TOKEN_PUBLIC
+      | TOKEN_PRIVATE
+      | TOKEN_PROTECTED
+      | TOKEN_STATIC
+      | TOKEN_FINAL
+
+tipo:
+        TOKEN_DOUBLE
+      | TOKEN_INT
+      | TOKEN_STRING_TIPO
+      | TOKEN_LONG
+      | TOKEN_BOOLEAN
+      | TOKEN_SHORT
+      | TOKEN_CHAR
+      | TOKEN_FLOAT
+    ;
+
+
+//Atributos da classe (STUB da Issue 1)
+declaracao_variavel:
+        modificadores tipo ID TOKEN_PTOVIRG
+      | modificadores tipo ID TOKEN_ATRIB NUMERO TOKEN_PTOVIRG
+    ;
+
+// (STUB da Issue 3 apenas abre e fecha chaves por enquanto)
+bloco:
+    TOKEN_ABRE_CHAVE lista_comandos TOKEN_FECHA_CHAVE
     ;
 
 lista_comandos:
@@ -117,16 +189,12 @@ lista_comandos:
     ;
 
 comando:
-      declaracao_variavel
+  declaracao_local
     | atribuicao
     | condicional
     | repeticao
     | comando_salto
     | bloco
-    ;
-
-bloco:
-    TOKEN_ABRE_CHAVE lista_comandos TOKEN_FECHA_CHAVE
     ;
 
 /* Expressões e comandos básicos */
@@ -136,7 +204,7 @@ expressao:
     | NUMERO
     ;
 
-declaracao_variavel:
+declaracao_local:
       TOKEN_INT ID TOKEN_PTOVIRG
     | TOKEN_INT ID TOKEN_ATRIB expressao TOKEN_PTOVIRG
     ;
@@ -230,7 +298,7 @@ condicional:
 atribuicao_for:
       TOKEN_PTOVIRG
     | ID TOKEN_ATRIB expressao TOKEN_PTOVIRG
-    | declaracao_variavel
+    | declaracao_local
     ;
 
 condicao_for:
@@ -275,8 +343,12 @@ void yyerror(const char *mensagem) {
 
 int main(void) {
     if (yyparse() == 0) {
-        printf("Analise sintatica concluida com sucesso.\n");
+        printf("\nAnalise sintatica concluida com sucesso.\n");
         return 0;
     }
     return 1;
 }
+/*
+
+abstract de fora
+*/
