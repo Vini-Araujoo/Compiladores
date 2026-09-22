@@ -106,12 +106,16 @@ void yyerror(const char *mensagem);
 %%
 
 programa:
-    declaracao
+    classe
     ;
 
-declaracao:
-    TOKEN_INT ID TOKEN_ATRIB NUMERO TOKEN_PTOVIRG
+classe:
+      TOKEN_PUBLIC TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE | TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
     ;
+
+corpo_classe:
+
+
 
 %%
 
@@ -121,7 +125,7 @@ void yyerror(const char *mensagem) {
 
 int main(void) {
     if (yyparse() == 0) {
-        printf("Analise sintatica concluida com sucesso.\n");
+        printf("\nAnalise sintatica concluida com sucesso.\n");
         return 0;
     }
 

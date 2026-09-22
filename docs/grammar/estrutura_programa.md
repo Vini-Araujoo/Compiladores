@@ -1,7 +1,7 @@
 # Documentação Sintática: Estrutura do Programa, Classes e Métodos
 
 - **Issue:** Issue 4
-- **Responsável:**
+- **Responsável:** Kelyton de Lucas Moraes Santos
 - **Branch:** `feat/issue-4-estrutura-programa`
 
 ---
