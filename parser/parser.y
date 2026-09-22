@@ -106,10 +106,9 @@ void yyerror(const char *mensagem);
 %%
 
 programa:
-    classe
+    declaracao_classe
     ;
-
-classe:
+declaracao_classe:
         TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
       | TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
       | TOKEN_PUBLIC TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE 
@@ -117,8 +116,63 @@ classe:
     ;
 
 corpo_classe:
+      %empty
+      | corpo_classe membro_classe
+    ;
+
+membro_classe:
+        declaracao_variavel
+      | declaracao_metodo  
+    ;
 
 
+declaracao_metodo:
+      modificadores tipo_retorno ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
+    ;
+lista_parametros:
+
+parametro:
+
+
+modificadores:
+    %empty
+    | modificadores modificador
+    | modificador
+
+modificador:
+      %empty
+      | TOKEN_PUBLIC
+      | TOKEN_PRIVATE
+      | TOKEN_PROTECTED
+      | TOKEN_STATIC
+      | TOKEN_FINAL
+
+tipo_retorno:
+
+tipo:
+      | TOKEN_VOID
+      | TOKEN_DOUBLE
+      | TOKEN_INT
+      | TOKEN_STRING_TIPO
+      | TOKEN_LONG
+      | TOKEN_BOOLEAN
+      | TOKEN_SHORT
+      | TOKEN_CHAR
+      | TOKEN_FLOAT
+    ;
+
+
+
+//Atributos da classe (STUB da Issue 1)
+declaracao_variavel:
+        modificadores tipo ID TOKEN_PTOVIRG
+      | modificadores tipo ID TOKEN_ATRIB NUMERO TOKEN_PTOVIRG
+    ;
+
+// (STUB da Issue 3 apenas abre e fecha chaves por enquanto)
+bloco:
+      TOKEN_ABRE_CHAVE TOKEN_FECHA_CHAVE
+    ;
 
 %%
 
@@ -140,4 +194,6 @@ echo "public final class Main{}" | ./build/parser
 echo "class Main{}" | ./build/parser
 echo "class Main(){}" | ./build/parser
 
+
+abstract de fora
 */
