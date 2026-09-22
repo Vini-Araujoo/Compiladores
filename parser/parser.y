@@ -110,7 +110,10 @@ programa:
     ;
 
 classe:
-      TOKEN_PUBLIC TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE | TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
+        TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
+      | TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
+      | TOKEN_PUBLIC TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE 
+      | TOKEN_PUBLIC TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
     ;
 
 corpo_classe:
@@ -131,3 +134,10 @@ int main(void) {
 
     return 1;
 }
+/*
+echo "public class Main{}" | ./build/parser
+echo "public final class Main{}" | ./build/parser
+echo "class Main{}" | ./build/parser
+echo "class Main(){}" | ./build/parser
+
+*/
