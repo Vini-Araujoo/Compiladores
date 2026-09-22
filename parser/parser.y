@@ -100,17 +100,45 @@ void yyerror(const char *mensagem);
 %token TOKEN_IN
 %token TOKEN_DOIS_PONTOS
 
+    // precedencia e associatividade dos operadores de expressao,
+    // da menor para a maior prioridade
+%left   TOKEN_IGUAL TOKEN_DIFERENTE
+%left   TOKEN_MENOR TOKEN_MAIOR TOKEN_MENOR_IGUAL TOKEN_MAIOR_IGUAL
+%left   TOKEN_MAIS TOKEN_MENOS
+%left   TOKEN_VEZES TOKEN_DIV
+%precedence TOKEN_NEGACAO UMINUS
 
 %start programa
 
 %%
 
+// Ponto de entrada temporario para validar expressoes isoladas (Issue 2).
+// Aceita uma sequencia de expressoes terminadas em ';'.
 programa:
-    declaracao
+      lista_expressoes
     ;
 
-declaracao:
-    TOKEN_INT ID TOKEN_ATRIB NUMERO TOKEN_PTOVIRG
+lista_expressoes:
+      %empty
+    | lista_expressoes expressao TOKEN_PTOVIRG
+    ;
+
+expressao:
+      expressao TOKEN_MAIS expressao
+    | expressao TOKEN_MENOS expressao
+    | expressao TOKEN_VEZES expressao
+    | expressao TOKEN_DIV expressao
+    | expressao TOKEN_MENOR expressao
+    | expressao TOKEN_MAIOR expressao
+    | expressao TOKEN_MENOR_IGUAL expressao
+    | expressao TOKEN_MAIOR_IGUAL expressao
+    | expressao TOKEN_IGUAL expressao
+    | expressao TOKEN_DIFERENTE expressao
+    | TOKEN_NEGACAO expressao
+    | TOKEN_MENOS expressao %prec UMINUS
+    | TOKEN_ABRE_PAR expressao TOKEN_FECHA_PAR
+    | ID
+    | NUMERO
     ;
 
 %%
