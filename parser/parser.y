@@ -149,11 +149,10 @@ parametro:
 modificadores:
         %empty
       | modificadores modificador
-      | modificador
     ; 
+    
 modificador:
-        %empty
-      | TOKEN_PUBLIC
+        TOKEN_PUBLIC
       | TOKEN_PRIVATE
       | TOKEN_PROTECTED
       | TOKEN_STATIC
@@ -202,11 +201,6 @@ int main(void) {
     return 1;
 }
 /*
-echo "public class Main{}" | ./build/parser
-echo "public final class Main{}" | ./build/parser
-echo "class Main{}" | ./build/parser
-echo "class Main(){}" | ./build/parser
-
 
 abstract de fora
 */
