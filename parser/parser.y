@@ -107,7 +107,8 @@ void yyerror(const char *mensagem);
 /* Estrutura do programa e blocos */
 
 programa:
-    declaracao_classe
+      declaracao_classe
+    | %empty
     ;
 declaracao_classe:
         TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
@@ -159,7 +160,7 @@ modificador:
       | TOKEN_PROTECTED
       | TOKEN_STATIC
       | TOKEN_FINAL
-
+    ;
 tipo:
         TOKEN_DOUBLE
       | TOKEN_INT
@@ -174,9 +175,23 @@ tipo:
 
 //Atributos da classe (STUB da Issue 1)
 declaracao_variavel:
-        modificadores tipo ID TOKEN_PTOVIRG
-      | modificadores tipo ID TOKEN_ATRIB NUMERO TOKEN_PTOVIRG
-    ;
+        modificadores tipo lista_declaracoes TOKEN_PTOVIRG
+      ;
+
+lista_declaracoes:
+        item_declaracao
+      | lista_declaracoes TOKEN_VIRGULA item_declaracao
+      ;
+
+item_declaracao:
+        ID
+      | ID TOKEN_ATRIB expressao
+      ;
+
+modificador_variavel:
+        %empty
+      | TOKEN_FINAL
+      ;
 
 // (STUB da Issue 3 apenas abre e fecha chaves por enquanto)
 bloco:
@@ -205,8 +220,7 @@ expressao:
     ;
 
 declaracao_local:
-      TOKEN_INT ID TOKEN_PTOVIRG
-    | TOKEN_INT ID TOKEN_ATRIB expressao TOKEN_PTOVIRG
+      modificador_variavel tipo lista_declaracoes TOKEN_PTOVIRG
     ;
 
 atribuicao:
@@ -215,6 +229,8 @@ atribuicao:
     | TOKEN_DECREMENTO ID TOKEN_PTOVIRG
     | ID TOKEN_INCREMENTO TOKEN_PTOVIRG
     | ID TOKEN_DECREMENTO TOKEN_PTOVIRG
+    | ID TOKEN_SOMA_ATRIB expressao TOKEN_PTOVIRG
+    | ID TOKEN_SUB_ATRIB expressao TOKEN_PTOVIRG
     ;
 
 comando_return:
