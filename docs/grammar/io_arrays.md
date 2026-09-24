@@ -1,7 +1,7 @@
 # Documentação Sintática: Entrada/Saída (I/O), Instanciação e Arrays
 
 - **Issue:** Issue 5
-- **Responsável:**
+- **Responsável: Vinícius Araújo Oliveira**
 - **Branch:** `feat/issue-5-io-arrays`
 
 ---
