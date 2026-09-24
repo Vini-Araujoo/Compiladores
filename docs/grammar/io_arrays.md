@@ -1,24 +1,38 @@
-# Documentação Sintática: Entrada/Saída (I/O), Instanciação e Arrays
+# Entrada, saída e arrays
 
 - **Issue:** Issue 5
 - **Responsável: Vinícius Araújo Oliveira**
 - **Branch:** `feat/issue-5-io-arrays`
 
----
+## Regras BNF
 
-## 1. Descrição Geral
+```bnf
+comando_io ::= comando_print
+             | leitura_scanner ";"
+             | chamada_metodo ";"
 
-Descreva aqui os comandos de `System.out.print/println`, leitura com `Scanner`, instanciação `new` e manipulação de `arrays`.
+comando_print ::= "System" "." "out" "." "println" "(" argumento_opcional ")" ";"
+                | "System" "." "out" "." "print" "(" expressao ")" ";"
 
----
+argumento_opcional ::= vazio | expressao
+leitura_scanner ::= ID "." metodo_scanner "(" ")"
+metodo_scanner ::= "next" | "nextLine" | "nextInt" | "nextDouble"
+                 | "nextFloat" | "nextLong" | "nextShort"
+                 | "nextByte" | "nextBoolean"
 
-## Casos de Teste Validados
+instanciacao ::= "new" "Scanner" "(" "System" "." "in" ")"
+               | "new" tipo_base "[" expressao "]"
+acesso_array ::= ID "[" expressao "]"
 
-- [ ] `tests/parser/issue_5/valido_print.java`
-- [ ] `tests/parser/issue_5/valido_scanner.java`
-- [ ] `tests/parser/issue_5/valido_arrays.java`
-- [ ] `tests/parser/issue_5/valido_chamadas_metodos.java`
-- [ ] `tests/parser/issue_5/invalido_print_sem_fechar_parenteses.java`
-- [ ] `tests/parser/issue_5/invalido_scanner_sem_system_in.java`
-- [ ] `tests/parser/issue_5/invalido_array_sem_indice.java`
-- [ ] `tests/parser/issue_5/invalido_new_array_sem_tamanho.java`
+chamada_metodo ::= ID "(" argumentos_opcionais ")"
+                 | ID "." ID "(" argumentos_opcionais ")"
+```
+
+`acesso_array` é uma expressão, portanto pode aparecer como valor e como alvo
+de atribuição. A instanciação é aceita como valor de uma atribuição, por
+exemplo `leitor = new Scanner(System.in);`.
+
+Chamadas qualificadas usam exatamente um `TOKEN_PONTO` seguido de um `ID`.
+Os nomes reservados de `Scanner` e de seus métodos continuam sendo tokens
+próprios; assim, um identificador comum não é confundido com uma chamada
+especial e o ponto não é tratado como parte do identificador.

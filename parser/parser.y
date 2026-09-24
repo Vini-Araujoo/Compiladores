@@ -108,6 +108,7 @@ void yyerror(const char *mensagem);
 
 programa:
       declaracao_classe
+    | lista_instrucoes_io
     | %empty
     ;
 declaracao_classe:
@@ -206,6 +207,7 @@ lista_comandos:
 comando:
   declaracao_local
     | atribuicao
+    | comando_io
     | condicional
     | repeticao
     | comando_salto
@@ -217,6 +219,11 @@ comando:
 expressao:
       ID
     | NUMERO
+    | acesso_array
+    | leitura_scanner
+    | chamada_metodo
+    | instanciacao
+    | ID TOKEN_MAIS NUMERO
     ;
 
 declaracao_local:
@@ -225,12 +232,87 @@ declaracao_local:
 
 atribuicao:
       ID TOKEN_ATRIB expressao TOKEN_PTOVIRG
+  | acesso_array TOKEN_ATRIB expressao TOKEN_PTOVIRG
     | TOKEN_INCREMENTO ID TOKEN_PTOVIRG
     | TOKEN_DECREMENTO ID TOKEN_PTOVIRG
     | ID TOKEN_INCREMENTO TOKEN_PTOVIRG
     | ID TOKEN_DECREMENTO TOKEN_PTOVIRG
     | ID TOKEN_SOMA_ATRIB expressao TOKEN_PTOVIRG
     | ID TOKEN_SUB_ATRIB expressao TOKEN_PTOVIRG
+    ;
+
+/* Entrada, saída, instanciação, arrays e chamadas qualificadas */
+
+comando_io:
+      comando_print
+    | leitura_scanner TOKEN_PTOVIRG
+    | chamada_metodo TOKEN_PTOVIRG
+    ;
+
+lista_instrucoes_io:
+      comando_io
+    | atribuicao
+    | lista_instrucoes_io comando_io
+    | lista_instrucoes_io atribuicao
+    ;
+
+comando_print:
+      TOKEN_SYSTEM TOKEN_PONTO TOKEN_OUT TOKEN_PONTO TOKEN_PRINTLN
+      TOKEN_ABRE_PAR argumento_opcional TOKEN_FECHA_PAR TOKEN_PTOVIRG
+    | TOKEN_SYSTEM TOKEN_PONTO TOKEN_OUT TOKEN_PONTO TOKEN_PRINT
+      TOKEN_ABRE_PAR expressao TOKEN_FECHA_PAR TOKEN_PTOVIRG
+    ;
+
+argumento_opcional:
+      %empty
+    | expressao
+    ;
+
+instanciacao:
+      TOKEN_NEW TOKEN_SCANNER TOKEN_ABRE_PAR TOKEN_SYSTEM TOKEN_PONTO
+      TOKEN_IN TOKEN_FECHA_PAR
+    | TOKEN_NEW tipo_base TOKEN_ABRE_COLCHETE expressao TOKEN_FECHA_COLCHETE
+    ;
+
+tipo_base:
+      TOKEN_INT
+    | TOKEN_DOUBLE
+    | TOKEN_STRING_TIPO
+    ;
+
+acesso_array:
+      ID TOKEN_ABRE_COLCHETE expressao TOKEN_FECHA_COLCHETE
+    ;
+
+leitura_scanner:
+      ID TOKEN_PONTO metodo_scanner TOKEN_ABRE_PAR TOKEN_FECHA_PAR
+    ;
+
+metodo_scanner:
+      TOKEN_NEXT
+    | TOKEN_NEXT_LINE
+    | TOKEN_NEXT_INT
+    | TOKEN_NEXT_DOUBLE
+    | TOKEN_NEXT_FLOAT
+    | TOKEN_NEXT_LONG
+    | TOKEN_NEXT_SHORT
+    | TOKEN_NEXT_BYTE
+    | TOKEN_NEXT_BOOLEAN
+    ;
+
+chamada_metodo:
+      ID TOKEN_ABRE_PAR argumentos_opcionais TOKEN_FECHA_PAR
+    | ID TOKEN_PONTO ID TOKEN_ABRE_PAR argumentos_opcionais TOKEN_FECHA_PAR
+    ;
+
+argumentos_opcionais:
+      %empty
+    | lista_argumentos
+    ;
+
+lista_argumentos:
+      expressao
+    | lista_argumentos TOKEN_VIRGULA expressao
     ;
 
 comando_return:
