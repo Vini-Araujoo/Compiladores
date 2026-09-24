@@ -1,6 +1,8 @@
 # Entrada, saída e arrays
 
-As regras da Issue 5 são integradas à gramática de comandos e expressões.
+- **Issue:** Issue 5
+- **Responsável: Vinícius Araújo Oliveira**
+- **Branch:** `feat/issue-5-io-arrays`
 
 ## Regras BNF
 
