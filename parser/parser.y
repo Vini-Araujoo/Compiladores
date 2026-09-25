@@ -97,10 +97,19 @@ void yyerror(const char *mensagem);
 %token TOKEN_IN
 %token TOKEN_DOIS_PONTOS
 
+// Precedencia e associatividade das expressoes, da menor para a maior.
+%left   TOKEN_OU
+%left   TOKEN_E
+%left   TOKEN_IGUAL TOKEN_DIFERENTE
+%left   TOKEN_MENOR TOKEN_MAIOR TOKEN_MENOR_IGUAL TOKEN_MAIOR_IGUAL
+%left   TOKEN_MAIS TOKEN_MENOS
+%left   TOKEN_VEZES TOKEN_DIV
+%precedence TOKEN_NEGACAO UMINUS
+
 %start programa
 
-%nonassoc LOWER_THAN_ELSE
-%nonassoc TOKEN_ELSE
+%precedence LOWER_THAN_ELSE
+%precedence TOKEN_ELSE
 
 %%
 
@@ -111,6 +120,7 @@ programa:
     | lista_instrucoes_io
     | %empty
     ;
+
 declaracao_classe:
         TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
       | TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
@@ -217,13 +227,29 @@ comando:
 /* Expressões e comandos básicos */
 
 expressao:
-      ID
+      expressao TOKEN_OU expressao
+    | expressao TOKEN_E expressao
+       | expressao TOKEN_MAIS expressao
+    | expressao TOKEN_MENOS expressao
+    | expressao TOKEN_VEZES expressao
+    | expressao TOKEN_DIV expressao
+    | expressao TOKEN_MENOR expressao
+    | expressao TOKEN_MAIOR expressao
+    | expressao TOKEN_MENOR_IGUAL expressao
+    | expressao TOKEN_MAIOR_IGUAL expressao
+    | expressao TOKEN_IGUAL expressao
+    | expressao TOKEN_DIFERENTE expressao
+    | TOKEN_NEGACAO expressao
+    | TOKEN_MENOS expressao %prec UMINUS
+    | TOKEN_ABRE_PAR expressao TOKEN_FECHA_PAR
+    | ID
     | NUMERO
+    | TOKEN_TRUE
+    | TOKEN_FALSE
     | acesso_array
     | leitura_scanner
     | chamada_metodo
     | instanciacao
-    | ID TOKEN_MAIS NUMERO
     ;
 
 declaracao_local:
@@ -245,8 +271,7 @@ atribuicao:
 
 comando_io:
       comando_print
-    | leitura_scanner TOKEN_PTOVIRG
-    | chamada_metodo TOKEN_PTOVIRG
+    | expressao TOKEN_PTOVIRG
     ;
 
 lista_instrucoes_io:
@@ -325,37 +350,9 @@ comando_salto:
     | comando_return
     ;
 
-/* Condições: parênteses/comparações > && > || */
-
-comparador:
-      TOKEN_IGUAL
-    | TOKEN_DIFERENTE
-    | TOKEN_MENOR
-    | TOKEN_MAIOR
-    | TOKEN_MENOR_IGUAL
-    | TOKEN_MAIOR_IGUAL
-    ;
-
+/* Condicoes usam a mesma precedencia da expressao booleana. */
 condicao:
-    condicao_ou
-    ;
-
-condicao_ou:
-      condicao_ou TOKEN_OU condicao_e
-    | condicao_e
-    ;
-
-condicao_e:
-      condicao_e TOKEN_E condicao_base
-    | condicao_base
-    ;
-
-condicao_base:
-      TOKEN_ABRE_PAR condicao TOKEN_FECHA_PAR
-    | TOKEN_TRUE
-    | TOKEN_FALSE
-    | expressao comparador expressao
-    | expressao
+  expressao
     ;
 
 /* Condicionais */

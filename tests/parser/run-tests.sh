@@ -15,12 +15,12 @@ fi
 TEST_DIR="$ROOT_DIR/tests/parser/$ISSUE_DIR"
 
 if [[ ! -x "$PARSER" ]]; then
-    echo "Erro: parser não encontrado em $PARSER. Execute 'make parser' primeiro." >&2
+    echo "Erro: parser nao encontrado em $PARSER. Execute 'make parser' primeiro." >&2
     exit 2
 fi
 
 if [[ ! -d "$TEST_DIR" ]]; then
-    echo "Erro: diretório de testes não encontrado: $TEST_DIR" >&2
+    echo "Erro: diretorio de testes nao encontrado: $TEST_DIR" >&2
     exit 2
 fi
 
@@ -54,7 +54,7 @@ executar_teste() {
     else
         printf '[FAIL] %s (esperado: %s; status: %d)\n' \
             "$(basename "$arquivo")" "$esperado" "$status"
-        printf '       Saída: %s\n' "${saida:-<sem saída>}"
+        printf '       Saida: %s\n' "${saida:-<sem saida>}"
         ((falhou++))
     fi
 }
