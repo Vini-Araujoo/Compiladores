@@ -22,6 +22,8 @@ enum
     TOKEN_CHAR,
     TOKEN_FLOAT,
     TOKEN_DOUBLE,
+    TOKEN_TRUE,
+    TOKEN_FALSE,
 
     // operadores
     TOKEN_ATRIB,
@@ -35,6 +37,8 @@ enum
     TOKEN_MENOS,
     TOKEN_VEZES,
     TOKEN_DIV,
+    TOKEN_E,
+    TOKEN_OU,
 
     // delimitadores
     TOKEN_PTOVIRG, //;
@@ -49,7 +53,7 @@ enum
     TOKEN_ELSE,
     TOKEN_SWITCH,
     TOKEN_CASE,
-    TOKEN_DEFALUT,
+    TOKEN_DEFAULT,
     TOKEN_BREAK,
     TOKEN_DO,
     TOKEN_WHILE,

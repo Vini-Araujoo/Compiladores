@@ -23,10 +23,12 @@
 "char"          { return TOKEN_CHAR;            }
 "float"         { return TOKEN_FLOAT;           }
 "double"        { return TOKEN_DOUBLE;          }
+"true"          { return TOKEN_TRUE;            }
+"false"         { return TOKEN_FALSE;           }
 
 "switch"        { return TOKEN_SWITCH;           }
 "case"          { return TOKEN_CASE;             }
-"default"       { return TOKEN_DEFALUT;          }
+"default"       { return TOKEN_DEFAULT;          }
 "break"         { return TOKEN_BREAK;            }
 "do"            { return TOKEN_DO;               }
 
@@ -83,14 +85,14 @@
 "["             { return TOKEN_ABRE_COLCHETE;   }
 "]"             { return TOKEN_FECHA_COLCHETE;  }
 "."             { return TOKEN_PONTO;           }
+"&&"            { return TOKEN_E;               }
+"||"            { return TOKEN_OU;              }
 
 
 [a-zA-Z_][a-zA-Z_0-9]*  { return ID; }
 [0-9]+                  { return NUMERO; }
-[ \t\n]+ {/* ignora espaços e quebra de linha */}
-
-. {printf("Erro: caractere desconhecido");/* ignora qualquer outro caractere */}
-
+[ \t\r\n]+      { /* ignora espaços, tabs e quebras de linha */ }
+.               { fprintf(stderr, "Caractere desconhecido: '%s' (ASCII: %d)\n", yytext, (unsigned char)yytext[0]); }
 %%
 
 int yywrap(void){

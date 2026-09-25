@@ -1,64 +1,74 @@
-# Uso:
-#   bash tests/parser/run-tests.sh <numero_da_issue>
-#   make test ISSUE=<numero_da_issue>
+#!/usr/bin/env bash
 
-set -eu
+set -u
 
-ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-cd "$ROOT_DIR"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PARSER="$ROOT_DIR/build/parser"
+ISSUE_INPUT="${1:-issue_4}"
 
-ISSUE=${1:-}
-if [ -z "$ISSUE" ]; then
-    echo "Uso: $0 <numero_da_issue>" >&2
+if [[ "$ISSUE_INPUT" =~ ^[0-9]+$ ]]; then
+    ISSUE_DIR="issue_$ISSUE_INPUT"
+else
+    ISSUE_DIR="$ISSUE_INPUT"
+fi
+
+TEST_DIR="$ROOT_DIR/tests/parser/$ISSUE_DIR"
+
+if [[ ! -x "$PARSER" ]]; then
+    echo "Erro: parser nao encontrado em $PARSER. Execute 'make parser' primeiro." >&2
     exit 2
 fi
 
-TEST_DIR="tests/parser/issue_${ISSUE}"
-BINARY=./build/parser
-
-if [ ! -d "$TEST_DIR" ]; then
-    echo "Diretorio de testes nao encontrado: $TEST_DIR" >&2
+if [[ ! -d "$TEST_DIR" ]]; then
+    echo "Erro: diretorio de testes nao encontrado: $TEST_DIR" >&2
     exit 2
 fi
 
-FALHAS=0
-TOTAL=0
+shopt -s nullglob
+POSITIVOS=("$TEST_DIR"/valido_*.java)
+NEGATIVOS=("$TEST_DIR"/invalido_*.java)
 
-for input in "$TEST_DIR"/valido_*.java; do
-    [ -e "$input" ] || continue
-    TOTAL=$((TOTAL + 1))
-    name=$(basename "$input")
+if (( ${#POSITIVOS[@]} == 0 && ${#NEGATIVOS[@]} == 0 )); then
+    echo "Erro: nenhum teste encontrado em $TEST_DIR" >&2
+    exit 2
+fi
 
-    if "$BINARY" < "$input" > /tmp/parser-test-out.$$ 2>&1; then
-        printf 'OK:    %s (aceito como esperado)\n' "$name"
+passou=0
+falhou=0
+
+executar_teste() {
+    local arquivo="$1"
+    local esperado="$2"
+    local saida
+    local status
+
+    saida="$("$PARSER" < "$arquivo" 2>&1)"
+    status=$?
+
+    if [[ "$esperado" == "sucesso" && $status -eq 0 ]]; then
+        printf '[PASS] %s\n' "$(basename "$arquivo")"
+        ((passou++))
+    elif [[ "$esperado" == "erro" && $status -ne 0 && "$saida" == *"Erro sintatico:"* ]]; then
+        printf '[PASS] %s\n' "$(basename "$arquivo")"
+        ((passou++))
     else
-        printf 'FALHA: %s deveria ser aceito, mas foi rejeitado:\n' "$name"
-        cat /tmp/parser-test-out.$$
-        FALHAS=$((FALHAS + 1))
+        printf '[FAIL] %s (esperado: %s; status: %d)\n' \
+            "$(basename "$arquivo")" "$esperado" "$status"
+        printf '       Saida: %s\n' "${saida:-<sem saida>}"
+        ((falhou++))
     fi
-    rm -f /tmp/parser-test-out.$$
+}
+
+for arquivo in "${POSITIVOS[@]}"; do
+    executar_teste "$arquivo" sucesso
 done
 
-for input in "$TEST_DIR"/invalido_*.java; do
-    [ -e "$input" ] || continue
-    TOTAL=$((TOTAL + 1))
-    name=$(basename "$input")
-
-    if "$BINARY" < "$input" > /tmp/parser-test-out.$$ 2>&1; then
-        printf 'FALHA: %s deveria ser rejeitado, mas foi aceito:\n' "$name"
-        cat /tmp/parser-test-out.$$
-        FALHAS=$((FALHAS + 1))
-    else
-        printf 'OK:    %s (rejeitado como esperado)\n' "$name"
-    fi
-    rm -f /tmp/parser-test-out.$$
+for arquivo in "${NEGATIVOS[@]}"; do
+    executar_teste "$arquivo" erro
 done
 
-echo "---"
-echo "Total: $TOTAL | Falhas: $FALHAS"
+printf '\nResumo: %d passou, %d falhou.\n' "$passou" "$falhou"
 
-if [ "$FALHAS" -ne 0 ]; then
+if (( falhou > 0 )); then
     exit 1
 fi
-
-exit 0
