@@ -1,0 +1,26 @@
+enum TipoDado
+{
+    TIPO_INT,
+    TIPO_FLOAT,
+    TIPO_DOUBLE,
+    TIPO_BOOLEAN,
+    TIPO_CHAR,
+    TIPO_STRING,
+    TIPO_VOID
+};
+
+enum TipoNoAST
+{
+
+    NO_PROGRAMA,
+    NO_CLASSE,
+    NO_METODO,
+    NO_VAR_DECL,
+    NO_BLOCO,
+    NO_IF,
+    NO_WHILE,
+    NO_FOR,
+    NO_RETURN,
+    NO_LITERAL_INT,
+    NO_IDENTIFICADOR
+};
