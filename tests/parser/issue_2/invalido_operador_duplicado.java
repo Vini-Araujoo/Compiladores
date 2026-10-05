@@ -1,1 +1,5 @@
-a + * b;
+class InvalidoOperadorDuplicado {
+    void executar() {
+        a + * b;
+    }
+}

@@ -1,2 +1,6 @@
-do {
-} while (x)
+class InvalidoDoWhileSemPontoEVirgula {
+    void executar() {
+        do {
+        } while (x)
+    }
+}

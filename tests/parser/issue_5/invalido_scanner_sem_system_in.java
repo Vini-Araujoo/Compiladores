@@ -1,1 +1,5 @@
-new Scanner();
+class InvalidoScannerSemSystemIn {
+    void executar() {
+        new Scanner();
+    }
+}

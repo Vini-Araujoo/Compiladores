@@ -1,0 +1,3 @@
+else {
+    contador = 0;
+}

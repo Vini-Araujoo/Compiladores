@@ -1,3 +1,7 @@
-else {
-    contador = 0;
+class InvalidoElseSemIf {
+    void executar() {
+        else {
+            contador = 0;
+        }
+    }
 }

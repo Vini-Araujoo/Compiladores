@@ -1,1 +1,5 @@
-a + ;
+class InvalidoOperadorSemOperando {
+    void executar() {
+        a + ;
+    }
+}

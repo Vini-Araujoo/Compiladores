@@ -1,1 +1,5 @@
-vetor = new int[];
+class InvalidoNewArraySemTamanho {
+    void executar() {
+        vetor = new int[];
+    }
+}

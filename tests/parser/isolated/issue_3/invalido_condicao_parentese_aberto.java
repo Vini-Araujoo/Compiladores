@@ -1,0 +1,3 @@
+while ((contador < limite) {
+    contador++;
+}

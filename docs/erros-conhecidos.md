@@ -12,18 +12,9 @@ if (contador) {
 }
 ```
 
-## 2. Variável não declarada
-
-No arquivo abaixo, a atribuição para `n` é aceita mesmo sem uma declaração
-anterior para essa variável:
-
-```java
-n = 0;
-```
-
 Esse comportamento foi identificado durante o teste do arquivo `Main.java`.
 
-## 3. Declaração de `Scanner`
+## 2. Declaração de `Scanner`
 
 As duas formas abaixo produzem `Erro sintatico` no parser atual:
 

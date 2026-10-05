@@ -117,8 +117,8 @@ void yyerror(const char *mensagem);
 
 programa:
       declaracao_classe
-    | lista_instrucoes_io
-    | %empty
+    //| lista_instrucoes_io
+    //| %empty
     ;
 
 declaracao_classe:
@@ -181,6 +181,7 @@ tipo:
       | TOKEN_SHORT
       | TOKEN_CHAR
       | TOKEN_FLOAT
+      | TOKEN_SCANNER
     ;
 
 

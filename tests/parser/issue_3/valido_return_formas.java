@@ -1,9 +1,13 @@
-if (encerrar) {
-    return;
-}
+class ValidoReturnFormas {
+    void executar() {
+        if (encerrar) {
+            return;
+        }
 
-if (sucesso) {
-    return resultado;
-}
+        if (sucesso) {
+            return resultado;
+        }
 
-return 0;
+        return 0;
+    }
+}

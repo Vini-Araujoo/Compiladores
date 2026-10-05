@@ -1,1 +1,5 @@
-(a + b * 2;
+class InvalidoParentesesAbertos {
+    void executar() {
+        (a + b * 2;
+    }
+}

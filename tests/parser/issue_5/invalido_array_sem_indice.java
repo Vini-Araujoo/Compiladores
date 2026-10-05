@@ -1,1 +1,5 @@
-vetor[] = 10;
+class InvalidoArraySemIndice {
+    void executar() {
+        vetor[] = 10;
+    }
+}

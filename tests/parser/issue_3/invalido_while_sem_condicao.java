@@ -1,2 +1,6 @@
-while () {
+class InvalidoWhileSemCondicao {
+    void executar() {
+        while () {
+        }
+    }
 }

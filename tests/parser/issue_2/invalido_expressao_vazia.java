@@ -1,1 +1,5 @@
-();
+class InvalidoExpressaoVazia {
+    void executar() {
+        ();
+    }
+}

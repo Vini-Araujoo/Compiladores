@@ -1,3 +1,7 @@
-if (contador <) {
-    contador = 1;
+class InvalidoCondicaoOperadorIncompleto {
+    void executar() {
+        if (contador <) {
+            contador = 1;
+        }
+    }
 }

@@ -1,7 +1,11 @@
-if (idade >= 18 && possuiDocumento) {
-    aprovado = 1;
-}
+class ValidoCondicoesLogicas {
+    void executar() {
+        if (idade >= 18 && possuiDocumento) {
+            aprovado = 1;
+        }
 
-while ((contador < limite || prioridade) && ativo) {
-    contador++;
+        while ((contador < limite || prioridade) && ativo) {
+            contador++;
+        }
+    }
 }

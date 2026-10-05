@@ -1,10 +1,14 @@
-int contador = 0;
-int limite = 3;
+class ValidoMultiplosComandos {
+    void executar() {
+        int contador = 0;
+        int limite = 3;
 
-while (contador < limite) {
-    contador++;
-}
+        while (contador < limite) {
+            contador++;
+        }
 
-if (contador == limite) {
-    return contador;
+        if (contador == limite) {
+            return contador;
+        }
+    }
 }

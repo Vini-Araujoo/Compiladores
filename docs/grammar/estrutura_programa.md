@@ -136,4 +136,4 @@ Ou diretamente:
 bash tests/parser/run-tests.sh 4
 ```
 
-Na validacao atual, os 12 testes da Issue 4 passam.
+Na validacao atual, os 14 testes da Issue 4 passam.

@@ -1,8 +1,12 @@
-if (true) {
-}
+class ValidoBlocosVazios {
+    void executar() {
+        if (true) {
+        }
 
-while (false) {
-}
+        while (false) {
+        }
 
-do {
-} while (false);
+        do {
+        } while (false);
+    }
+}

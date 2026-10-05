@@ -1,3 +1,7 @@
-while ((contador < limite) {
-    contador++;
+class InvalidoCondicaoParenteseAberto {
+    void executar() {
+        while ((contador < limite) {
+            contador++;
+        }
+    }
 }
