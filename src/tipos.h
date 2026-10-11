@@ -1,0 +1,57 @@
+#ifndef TIPOS_H
+#define TIPOS_H
+
+typedef enum {
+    TIPO_VOID,
+    TIPO_BYTE,
+    TIPO_SHORT,
+    TIPO_INT,
+    TIPO_LONG,
+    TIPO_FLOAT,
+    TIPO_DOUBLE,
+    TIPO_CHAR,
+    TIPO_BOOLEAN,
+    TIPO_STRING,
+    TIPO_ARRAY,
+    TIPO_SCANNER
+} TipoDado;
+
+typedef enum {
+    NO_PROGRAMA,
+    NO_CLASSE,
+    NO_METODO,
+    NO_PARAMETRO,
+    NO_VAR_DECL,
+    NO_BLOCO,
+
+    NO_IF,
+    NO_WHILE,
+    NO_FOR,
+    NO_DO_WHILE,
+    NO_SWITCH,
+    NO_CASE,
+    NO_DEFAULT,
+    NO_RETURN,
+    NO_BREAK,
+
+    NO_ATRIBUICAO,
+    NO_PRINT,
+    NO_PRINTLN,
+    NO_SCANNER,
+
+    NO_OP_BINARIA,
+    NO_OP_UNARIA,
+    NO_CHAMADA_METODO,
+    NO_NOVA_INSTANCIA,
+    NO_ACESSO_ARRAY,
+
+    NO_IDENTIFICADOR,
+    NO_LITERAL_INT,
+    NO_LITERAL_FLOAT,
+    NO_LITERAL_DOUBLE,
+    NO_LITERAL_CHAR,
+    NO_LITERAL_STRING,
+    NO_LITERAL_BOOL
+} TipoNoAST;
+
+#endif

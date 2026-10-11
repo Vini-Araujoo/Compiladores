@@ -1,8 +1,11 @@
 %{
 #include <stdio.h>
+#include "../src/ast.h"
 
 int yylex(void);
 void yyerror(const char *mensagem);
+
+NoAST *arvore = NULL;
 %}
 
 // primitivos
@@ -123,9 +126,21 @@ programa:
 
 declaracao_classe:
         TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
+        {
+            arvore = criarNo(NO_CLASSE, 1);
+        }
       | TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-      | TOKEN_PUBLIC TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE 
+        {
+            arvore = criarNo(NO_CLASSE, 1);
+        }
+      | TOKEN_PUBLIC TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
+        {
+            arvore = criarNo(NO_CLASSE, 1);
+        }
       | TOKEN_PUBLIC TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
+        {
+            arvore = criarNo(NO_CLASSE, 1);
+        }
     ;
 
 corpo_classe:

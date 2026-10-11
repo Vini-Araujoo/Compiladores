@@ -13,7 +13,7 @@ PARSER_GENERATED_C := $(BUILD_DIR)/parser.tab.c
 PARSER_GENERATED_H := $(BUILD_DIR)/parser.tab.h
 PARSER_BINARY := $(BUILD_DIR)/parser
 
-.PHONY: all parser test clean
+.PHONY: all parser test test-ast clean
 
 all: parser
 
@@ -21,6 +21,13 @@ parser: $(PARSER_BINARY)
 
 test: parser
 	@bash tests/parser/run-tests.sh $(ISSUE)
+
+test-ast: | $(BUILD_DIR)
+	@$(CC) $(CFLAGS) -Isrc src/ast.c tests/ast/teste_criacao_nos.c -o $(BUILD_DIR)/teste_criacao_nos
+	@$(CC) $(CFLAGS) -Isrc src/ast.c tests/ast/teste_adicionar_filho_nulo.c -o $(BUILD_DIR)/teste_adicionar_filho_nulo
+	@$(BUILD_DIR)/teste_criacao_nos
+	@$(BUILD_DIR)/teste_adicionar_filho_nulo
+	@echo "Todos os testes unitários da AST passaram com sucesso!"
 
 $(PARSER_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(PARSER_GENERATED_C) $(LEXER_GENERATED) -o $@
