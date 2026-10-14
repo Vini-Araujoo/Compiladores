@@ -4,6 +4,7 @@
 
 int yylex(void);
 void yyerror(const char *mensagem);
+extern int yylineno;
 
 NoAST *arvore = NULL;
 %}
@@ -114,6 +115,16 @@ NoAST *arvore = NULL;
 %precedence LOWER_THAN_ELSE
 %precedence TOKEN_ELSE
 
+%code requires {
+    #include "../src/ast.h"
+}
+
+%union {
+    NoAST *no;
+}
+
+%type <no> bloco comando lista_comandos condicional condicao comando_if declaracao_local atribuicao comando_io repeticao comando_salto; 
+
 %%
 
 /* Estrutura do programa e blocos */
@@ -222,22 +233,29 @@ modificador_variavel:
 
 // (STUB da Issue 3 apenas abre e fecha chaves por enquanto)
 bloco:
-    TOKEN_ABRE_CHAVE lista_comandos TOKEN_FECHA_CHAVE
+    TOKEN_ABRE_CHAVE lista_comandos TOKEN_FECHA_CHAVE  { $$ = $2; }
     ;
 
 lista_comandos:
       %empty
-    | lista_comandos comando
+        {
+            $$ = criarNo(NO_BLOCO, 0); 
+        }
+    | lista_comandos comando 
+    { 
+        adicionarFilho($1, $2); 
+        $$ = $1;
+    }
     ;
 
 comando:
-  declaracao_local
-    | atribuicao
-    | comando_io
-    | condicional
-    | repeticao
-    | comando_salto
-    | bloco
+  declaracao_local { $$ = $1; }
+    | atribuicao { $$ = $1; }
+    | comando_io { $$ = $1; }
+    | condicional { $$ = $1; }
+    | repeticao { $$ = $1; }
+    | comando_salto { $$ = $1; }
+    | bloco { $$ = $1; }
     ;
 
 /* Expressões e comandos básicos */
@@ -367,8 +385,12 @@ comando_salto:
     ;
 
 /* Condicoes usam a mesma precedencia da expressao booleana. */
+/* Stub enquanto a expressao não retorna os nós */
 condicao:
   expressao
+    {
+        $$ = criarNo(NO_CONDICAO, 0);
+    }
     ;
 
 /* Condicionais */
@@ -376,8 +398,19 @@ condicao:
 comando_if:
       TOKEN_IF TOKEN_ABRE_PAR condicao TOKEN_FECHA_PAR comando
         %prec LOWER_THAN_ELSE
+        {
+            $$ = criarNo(NO_IF, 0);
+            adicionarFilho($$, $3);
+            adicionarFilho($$, $5);
+        }
     | TOKEN_IF TOKEN_ABRE_PAR condicao TOKEN_FECHA_PAR comando
       TOKEN_ELSE comando
+        {
+            $$ = criarNo(NO_IF, 0);
+            adicionarFilho($$, $3);
+            adicionarFilho($$, $5);
+            adicionarFilho($$, $7);
+        }
     ;
 
 comando_switch:
@@ -400,8 +433,8 @@ default_switch:
     ;
 
 condicional:
-      comando_if
-    | comando_switch
+      comando_if { $$ = $1; }
+    | comando_switch { $$ = criarNo(NO_SWITCH, 0); }
     ;
 
 /* Laços de repetição */
@@ -449,7 +482,7 @@ comando_while:
 %%
 
 void yyerror(const char *mensagem) {
-    fprintf(stderr, "Erro sintatico: %s\n", mensagem);
+    fprintf(stderr, "Erro sintatico na linha %d: %s\n", yylineno, mensagem);
 }
 
 int main(void) {

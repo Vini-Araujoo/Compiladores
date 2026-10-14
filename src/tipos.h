@@ -25,6 +25,7 @@ typedef enum {
     NO_BLOCO,
 
     NO_IF,
+    NO_ELSE,
     NO_WHILE,
     NO_FOR,
     NO_DO_WHILE,
@@ -44,6 +45,9 @@ typedef enum {
     NO_CHAMADA_METODO,
     NO_NOVA_INSTANCIA,
     NO_ACESSO_ARRAY,
+
+    NO_CONDICAO,
+    NO_THEN,
 
     NO_IDENTIFICADOR,
     NO_LITERAL_INT,

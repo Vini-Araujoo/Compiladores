@@ -22,15 +22,16 @@ parser: $(PARSER_BINARY)
 test: parser
 	@bash tests/parser/run-tests.sh $(ISSUE)
 
-test-ast: | $(BUILD_DIR)
+test-ast: parser | $(BUILD_DIR)
 	@$(CC) $(CFLAGS) -Isrc src/ast.c tests/ast/teste_criacao_nos.c -o $(BUILD_DIR)/teste_criacao_nos
 	@$(CC) $(CFLAGS) -Isrc src/ast.c tests/ast/teste_adicionar_filho_nulo.c -o $(BUILD_DIR)/teste_adicionar_filho_nulo
 	@$(BUILD_DIR)/teste_criacao_nos
 	@$(BUILD_DIR)/teste_adicionar_filho_nulo
+	@bash tests/ast/run-tests.sh
 	@echo "Todos os testes unitários da AST passaram com sucesso!"
 
-$(PARSER_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) | $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(PARSER_GENERATED_C) $(LEXER_GENERATED) -o $@
+$(PARSER_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast.c src/ast.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast.c -o $@
 
 $(PARSER_GENERATED_C) $(PARSER_GENERATED_H): $(PARSER_SOURCE) | $(BUILD_DIR)
 	$(BISON) -d -o $(PARSER_GENERATED_C) $(PARSER_SOURCE)
