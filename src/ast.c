@@ -30,7 +30,7 @@ NoAST *criarNo(TipoNoAST tipo, int linha) {
 }
 
 void adicionarFilho(NoAST *pai, NoAST *filho) {
-    if (!pai || !filho) {
+    if (!pai) {
         return;
     }
 

@@ -71,7 +71,8 @@ typedef union {
 * Retorna o ponteiro para o nó recém-criado.
 
 ### `void adicionarFilho(NoAST *pai, NoAST *filho)`
-* **Tratamento seguro para nulos**: Caso `pai` ou `filho` seja `NULL`, a função retorna imediatamente sem falhar ou causar `Segmentation Fault`.
+* **Pai nulo**: Caso `pai` seja `NULL`, a função retorna sem alterar a árvore.
+* **Filho nulo**: Um ponteiro `NULL` é armazenado como uma posição da lista de filhos. Isso preserva índices fixos em nós com campos opcionais, como `NO_FOR`.
 * **Redimensionamento dinâmico**: Se `pai->num_filhos >= pai->capacidade`, a capacidade é dobrada através de `realloc` exponencial ($4 \to 8 \to 16 \dots$).
 * O ponteiro do filho é anexado na posição `pai->filhos[pai->num_filhos++]`.
 
@@ -86,7 +87,7 @@ typedef union {
 
 A suíte da AST possui testes dedicados em `tests/ast/`:
 1. **`teste_criacao_nos.c`**: Valida criação de nós raiz, classes, métodos e inserção de múltiplos filhos com expansão de capacidade além do limite inicial.
-2. **`teste_adicionar_filho_nulo.c`**: Valida tratamento defensivo contra filhos ou pais nulos.
+2. **`teste_adicionar_filho_nulo.c`**: Valida que pais nulos são ignorados e que filhos nulos ocupam uma posição sem deslocar os filhos seguintes.
 
 Para compilar e executar os testes:
 ```bash

@@ -62,5 +62,12 @@ executar_negativo "$TEST_DIR/invalido_if_condicao_incompleta.java" 3
 executar_negativo "$TEST_DIR/invalido_else_sem_if.java" 3
 executar_negativo "$TEST_DIR/invalido_if_else_duplicado.java" 7
 
+echo "=== Testes de laços ==="
+executar_positivo "$TEST_DIR/valido_laco_while.java"
+executar_positivo "$TEST_DIR/valido_laco_do_while.java"
+executar_positivo "$TEST_DIR/valido_laco_for_completo.java"
+executar_positivo "$TEST_DIR/valido_laco_for_vazio.java"
+executar_negativo "$TEST_DIR/invalido_do_while_sem_ponto_virgula.java" 5
+
 printf 'Resumo: %d passou, %d falhou.\n' "$passou" "$falhou"
 (( falhou == 0 ))

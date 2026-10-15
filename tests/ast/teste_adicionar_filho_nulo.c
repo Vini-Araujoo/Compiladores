@@ -10,9 +10,10 @@ int main(void) {
     assert(pai != NULL);
     assert(pai->num_filhos == 0);
 
-    /* 1. Tentar adicionar filho NULL ao pai (deve ignorar com segurança, sem crash) */
+    /* 1. Um filho NULL deve ocupar uma posicao no vetor. */
     adicionarFilho(pai, NULL);
-    assert(pai->num_filhos == 0);
+    assert(pai->num_filhos == 1);
+    assert(pai->filhos[0] == NULL);
 
     /* 2. Tentar adicionar filho válido a um pai NULL (deve ignorar com segurança) */
     NoAST *filho = criarNo(NO_RETURN, 11);
@@ -22,10 +23,11 @@ int main(void) {
     /* 3. Tentar adicionar NULL a NULL */
     adicionarFilho(NULL, NULL);
 
-    /* 4. Adicionar o filho válido ao pai para garantir que o pai segue intacto */
+    /* 4. O filho seguinte deve manter o indice correto. */
     adicionarFilho(pai, filho);
-    assert(pai->num_filhos == 1);
-    assert(pai->filhos[0] == filho);
+    assert(pai->num_filhos == 2);
+    assert(pai->filhos[0] == NULL);
+    assert(pai->filhos[1] == filho);
 
     liberarAST(pai);
 
