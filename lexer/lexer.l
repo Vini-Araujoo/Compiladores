@@ -1,5 +1,5 @@
 
-%option yylineno
+%option yylineno noinput nounput
 
 %{
 #include <stdio.h>

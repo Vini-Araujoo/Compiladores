@@ -30,6 +30,7 @@ typedef enum {
     NO_FOR,
     NO_DO_WHILE,
     NO_SWITCH,
+    NO_CASES,
     NO_CASE,
     NO_DEFAULT,
     NO_RETURN,

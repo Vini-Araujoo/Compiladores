@@ -1,0 +1,12 @@
+class ValidoSwitchComCasesEDefault {
+    void executar() {
+        switch (2) {
+            case 1:
+                break;
+            case 2:
+                break;
+            default:
+                break;
+        }
+    }
+}

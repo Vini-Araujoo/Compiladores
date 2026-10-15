@@ -130,7 +130,9 @@ NoAST *arvore = NULL;
 %type <no> programa declaracao_classe corpo_classe membro_classe
 %type <no> bloco comando lista_comandos condicional condicao comando_if
 %type <no> declaracao_local atribuicao comando_io repeticao comando_salto
-%type <no> expressao
+%type <no> expressao comando_return comando_switch casos_switch case_switch
+%type <no> default_switch declaracao_metodo comando_print argumento_opcional
+%type <no> acesso_array
 %type <no> atribuicao_for condicao_for incremento_for
 %type <no> comando_for comando_do_while comando_while
 
@@ -150,13 +152,13 @@ programa:
 
 declaracao_classe:
         TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-        { $$ = $4; }
+        { free($2); $$ = $4; }
       | TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-        { $$ = $5; }
+        { free($3); $$ = $5; }
       | TOKEN_PUBLIC TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-        { $$ = $5; }
+        { free($3); $$ = $5; }
       | TOKEN_PUBLIC TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-        { $$ = $6; }
+        { free($4); $$ = $6; }
     ;
 
 corpo_classe:
@@ -169,14 +171,24 @@ corpo_classe:
     ;
 
 membro_classe:
-        declaracao_variavel { $$ = criarNo(NO_VAR_DECL, 0); }
-      | declaracao_metodo { $$ = criarNo(NO_METODO, 0); }
+      declaracao_variavel { $$ = criarNo(NO_VAR_DECL, 0); }
+      | declaracao_metodo { $$ = $1; }
     ;
 
 
 declaracao_metodo:
   modificadores tipo ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
+    {
+        free($3);
+        $$ = criarNo(NO_METODO, 0);
+        adicionarFilho($$, $7);
+    }
     | modificadores TOKEN_VOID ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
+    {
+        free($3);
+        $$ = criarNo(NO_METODO, 0);
+        adicionarFilho($$, $7);
+    }
     ;
 
 lista_parametros:
@@ -190,8 +202,9 @@ parametros_com_virgula:
     ;
 
 parametro:
-        tipo ID
-      | tipo TOKEN_ABRE_COLCHETE TOKEN_FECHA_COLCHETE ID /*para String[] args*/  
+        tipo ID { free($2); }
+      | tipo TOKEN_ABRE_COLCHETE TOKEN_FECHA_COLCHETE ID
+        { free($4); } /* String[] args */
     
     ;
 
@@ -302,43 +315,95 @@ expressao_sintatica:
 
 declaracao_local:
       modificador_variavel tipo lista_declaracoes TOKEN_PTOVIRG
+        { $$ = criarNo(NO_VAR_DECL, 0); }
     ;
 
 atribuicao:
       ID TOKEN_ATRIB expressao TOKEN_PTOVIRG
-  | acesso_array TOKEN_ATRIB expressao TOKEN_PTOVIRG
+        {
+            $$ = criarNo(NO_ATRIBUICAO, 0);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            id->valor.valor_str = $1;
+            adicionarFilho($$, id);
+            adicionarFilho($$, $3);
+        }
+    | acesso_array TOKEN_ATRIB expressao TOKEN_PTOVIRG
+        {
+            $$ = criarNo(NO_ATRIBUICAO, 0);
+            adicionarFilho($$, $1);
+            adicionarFilho($$, $3);
+        }
     | TOKEN_INCREMENTO ID TOKEN_PTOVIRG
+        {
+            $$ = criarNo(NO_INCREMENTO_ANTES, 0);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            id->valor.valor_str = $2;
+            adicionarFilho($$, id);
+        }
     | TOKEN_DECREMENTO ID TOKEN_PTOVIRG
+        {
+            $$ = criarNo(NO_DECREMENTO_ANTES, 0);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            id->valor.valor_str = $2;
+            adicionarFilho($$, id);
+        }
     | ID TOKEN_INCREMENTO TOKEN_PTOVIRG
+        {
+            $$ = criarNo(NO_INCREMENTO, 0);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            id->valor.valor_str = $1;
+            adicionarFilho($$, id);
+        }
     | ID TOKEN_DECREMENTO TOKEN_PTOVIRG
+        {
+            $$ = criarNo(NO_DECREMENTO, 0);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            id->valor.valor_str = $1;
+            adicionarFilho($$, id);
+        }
     | ID TOKEN_SOMA_ATRIB expressao TOKEN_PTOVIRG
+        {
+            $$ = criarNo(NO_ATRIBUICAO, 0);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            id->valor.valor_str = $1;
+            adicionarFilho($$, id);
+            adicionarFilho($$, $3);
+        }
     | ID TOKEN_SUB_ATRIB expressao TOKEN_PTOVIRG
+        {
+            $$ = criarNo(NO_ATRIBUICAO, 0);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            id->valor.valor_str = $1;
+            adicionarFilho($$, id);
+            adicionarFilho($$, $3);
+        }
     ;
 
 /* Entrada, saída, instanciação, arrays e chamadas qualificadas */
 
 comando_io:
-      comando_print
-    | expressao TOKEN_PTOVIRG
-    ;
-
-lista_instrucoes_io:
-      comando_io
-    | atribuicao
-    | lista_instrucoes_io comando_io
-    | lista_instrucoes_io atribuicao
+      comando_print { $$ = $1; }
+    | expressao TOKEN_PTOVIRG { $$ = $1; }
     ;
 
 comando_print:
       TOKEN_SYSTEM TOKEN_PONTO TOKEN_OUT TOKEN_PONTO TOKEN_PRINTLN
       TOKEN_ABRE_PAR argumento_opcional TOKEN_FECHA_PAR TOKEN_PTOVIRG
+        {
+            $$ = criarNo(NO_PRINTLN, 0);
+            adicionarFilho($$, $7);
+        }
     | TOKEN_SYSTEM TOKEN_PONTO TOKEN_OUT TOKEN_PONTO TOKEN_PRINT
       TOKEN_ABRE_PAR expressao TOKEN_FECHA_PAR TOKEN_PTOVIRG
+        {
+            $$ = criarNo(NO_PRINT, 0);
+            adicionarFilho($$, $7);
+        }
     ;
 
 argumento_opcional:
-      %empty
-    | expressao
+      %empty { $$ = NULL; }
+    | expressao { $$ = $1; }
     ;
 
 instanciacao:
@@ -355,6 +420,13 @@ tipo_base:
 
 acesso_array:
       ID TOKEN_ABRE_COLCHETE expressao TOKEN_FECHA_COLCHETE
+        {
+            $$ = criarNo(NO_ACESSO_ARRAY, 0);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            id->valor.valor_str = $1;
+            adicionarFilho($$, id);
+            adicionarFilho($$, $3);
+        }
     ;
 
 leitura_scanner:
@@ -375,7 +447,9 @@ metodo_scanner:
 
 chamada_metodo:
       ID TOKEN_ABRE_PAR argumentos_opcionais TOKEN_FECHA_PAR
+        { free($1); }
     | ID TOKEN_PONTO ID TOKEN_ABRE_PAR argumentos_opcionais TOKEN_FECHA_PAR
+        { free($1); free($3); }
     ;
 
 argumentos_opcionais:
@@ -389,12 +463,16 @@ lista_argumentos:
     ;
 
 comando_return:
-      TOKEN_RETURN TOKEN_PTOVIRG
+      TOKEN_RETURN TOKEN_PTOVIRG { $$ = criarNo(NO_RETURN, 0); }
     | TOKEN_RETURN expressao TOKEN_PTOVIRG
+    {
+        $$ = criarNo(NO_RETURN, 0);
+        adicionarFilho($$, $2);
+    }
     ;
 
 comando_salto:
-      TOKEN_BREAK TOKEN_PTOVIRG
+      TOKEN_BREAK TOKEN_PTOVIRG { $$ = criarNo(NO_BREAK, 0); }
     | comando_return
     ;
 
@@ -430,25 +508,44 @@ comando_if:
 comando_switch:
     TOKEN_SWITCH TOKEN_ABRE_PAR expressao TOKEN_FECHA_PAR
     TOKEN_ABRE_CHAVE casos_switch default_switch TOKEN_FECHA_CHAVE
+    {
+        $$ = criarNo(NO_SWITCH, 0);
+        adicionarFilho($$, $3);
+        adicionarFilho($$, $6);
+        adicionarFilho($$, $7);
+    }
     ;
 
 casos_switch:
-      %empty
+      %empty { $$ = criarNo(NO_CASES, 0); }
     | casos_switch case_switch
+    {
+        adicionarFilho($1, $2);
+        $$ = $1;
+    }
     ;
 
 case_switch:
     TOKEN_CASE expressao TOKEN_DOIS_PONTOS lista_comandos
+    {
+        $$ = criarNo(NO_CASE, 0);
+        adicionarFilho($$, $2);
+        adicionarFilho($$, $4);
+    }
     ;
 
 default_switch:
-      %empty
+      %empty { $$ = NULL; }
     | TOKEN_DEFAULT TOKEN_DOIS_PONTOS lista_comandos
+    {
+        $$ = criarNo(NO_DEFAULT, 0);
+        adicionarFilho($$, $3);
+    }
     ;
 
 condicional:
       comando_if { $$ = $1; }
-    | comando_switch { $$ = criarNo(NO_SWITCH, 0); }
+    | comando_switch { $$ = $1; }
     ;
 
 /* Laços de repetição */
@@ -554,7 +651,11 @@ void yyerror(const char *mensagem) {
 
 int main(void) {
     if (yyparse() == 0) {
+        if (arvore) {
+            imprimirAST(arvore);
+        }
         printf("\nAnalise sintatica concluida com sucesso.\n");
+        liberarAST(arvore);
         return 0;
     }
     return 1;

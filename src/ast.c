@@ -48,6 +48,105 @@ void adicionarFilho(NoAST *pai, NoAST *filho) {
     pai->filhos[pai->num_filhos++] = filho;
 }
 
+static const char *nomeTipoNoAST(TipoNoAST tipo) {
+    static const char *const nomes[] = {
+        "NO_PROGRAMA", "NO_CLASSE", "NO_METODO", "NO_PARAMETRO",
+        "NO_VAR_DECL", "NO_BLOCO", "NO_IF", "NO_ELSE", "NO_WHILE",
+        "NO_FOR", "NO_DO_WHILE", "NO_SWITCH", "NO_CASES", "NO_CASE",
+        "NO_DEFAULT", "NO_RETURN", "NO_BREAK", "NO_INCREMENTO",
+        "NO_DECREMENTO", "NO_INCREMENTO_ANTES", "NO_DECREMENTO_ANTES",
+        "NO_ATRIBUICAO", "NO_PRINT", "NO_PRINTLN", "NO_SCANNER",
+        "NO_OP_BINARIA", "NO_OP_UNARIA", "NO_CHAMADA_METODO",
+        "NO_NOVA_INSTANCIA", "NO_ACESSO_ARRAY", "NO_CONDICAO",
+        "NO_EXPRESSAO", "NO_THEN", "NO_IDENTIFICADOR", "NO_LITERAL_INT",
+        "NO_LITERAL_FLOAT", "NO_LITERAL_DOUBLE", "NO_LITERAL_CHAR",
+        "NO_LITERAL_STRING", "NO_LITERAL_BOOL"
+    };
+    const size_t quantidade = sizeof(nomes) / sizeof(nomes[0]);
+
+    if ((unsigned int)tipo >= quantidade) {
+        return "NO_DESCONHECIDO";
+    }
+    return nomes[tipo];
+}
+
+static const char *rotuloFilho(const NoAST *pai, int indice) {
+    if (pai->tipo_no == NO_FOR) {
+        static const char *const segmentos[] = {
+            "inicializacao", "condicao", "incremento", "bloco"
+        };
+        if (indice < 4) {
+            return segmentos[indice];
+        }
+    }
+    if (pai->tipo_no == NO_SWITCH) {
+        static const char *const segmentos[] = {"seletor", "casos", "default"};
+        if (indice < 3) {
+            return segmentos[indice];
+        }
+    }
+    if (pai->tipo_no == NO_CASES) {
+        return "case";
+    }
+    if (pai->tipo_no == NO_CASE) {
+        return indice == 0 ? "valor" : "comandos";
+    }
+    if (pai->tipo_no == NO_DEFAULT) {
+        return "comandos";
+    }
+    return NULL;
+}
+
+static void imprimirASTRec(const NoAST *no, const char *prefixo,
+                          int ultimo, const char *rotulo) {
+    if (rotulo) {
+        printf("%s%s%s: ", prefixo, ultimo ? "└── " : "├── ", rotulo);
+    } else if (*prefixo) {
+        printf("%s%s", prefixo, ultimo ? "└── " : "├── ");
+    }
+
+    if (!no) {
+        puts("<vazio>");
+        return;
+    }
+
+    printf("%s", nomeTipoNoAST(no->tipo_no));
+    if (no->tipo_no == NO_IDENTIFICADOR && no->valor.valor_str) {
+        printf(" (%s)", no->valor.valor_str);
+    } else if (no->tipo_no == NO_LITERAL_INT) {
+        printf(" (%ld)", no->valor.valor_int);
+    }
+    putchar('\n');
+
+    char proximo_prefixo[512];
+    size_t tamanho_prefixo = strlen(prefixo);
+    if (tamanho_prefixo > sizeof(proximo_prefixo) - 5) {
+        tamanho_prefixo = sizeof(proximo_prefixo) - 5;
+    }
+    memcpy(proximo_prefixo, prefixo, tamanho_prefixo);
+    proximo_prefixo[tamanho_prefixo] = '\0';
+    if (rotulo || *prefixo) {
+        strncat(proximo_prefixo, ultimo ? "    " : "│   ",
+                sizeof(proximo_prefixo) - strlen(proximo_prefixo) - 1);
+    }
+
+    for (int i = 0; i < no->num_filhos; i++) {
+        int filho_final = i == no->num_filhos - 1;
+        char rotulo_generico[32];
+        const char *rotulo_filho = rotuloFilho(no, i);
+        if (!rotulo_filho) {
+            snprintf(rotulo_generico, sizeof(rotulo_generico), "filho[%d]", i);
+            rotulo_filho = rotulo_generico;
+        }
+        imprimirASTRec(no->filhos[i], proximo_prefixo, filho_final,
+                       rotulo_filho);
+    }
+}
+
+void imprimirAST(const NoAST *raiz) {
+    imprimirASTRec(raiz, "", 1, NULL);
+}
+
 void liberarAST(NoAST *raiz) {
     if (!raiz) {
         return;
