@@ -25,7 +25,7 @@ Representa os tipos de dados suportados pelo compilador para fins de tipagem e f
 ### `TipoNoAST`
 Classifica o papel sintático de cada nó na árvore:
 * **Estrutura de Classes**: `NO_PROGRAMA`, `NO_CLASSE`, `NO_METODO`, `NO_PARAMETRO`, `NO_VAR_DECL`, `NO_BLOCO`.
-* **Controle de Fluxo**: `NO_IF`, `NO_WHILE`, `NO_FOR`, `NO_DO_WHILE`, `NO_SWITCH`, `NO_CASE`, `NO_DEFAULT`, `NO_RETURN`, `NO_BREAK`.
+* **Controle de Fluxo**: `NO_IF`, `NO_WHILE`, `NO_FOR`, `NO_DO_WHILE`, `NO_SWITCH`, `NO_CASES`, `NO_CASE`, `NO_DEFAULT`, `NO_RETURN`, `NO_BREAK`.
 * **Comandos e I/O**: `NO_ATRIBUICAO`, `NO_PRINT`, `NO_PRINTLN`, `NO_SCANNER`.
 * **Expressões e Operações**: `NO_OP_BINARIA`, `NO_OP_UNARIA`, `NO_CHAMADA_METODO`, `NO_NOVA_INSTANCIA`, `NO_ACESSO_ARRAY`.
 * **Literais e Folhas**: `NO_IDENTIFICADOR`, `NO_LITERAL_INT`, `NO_LITERAL_FLOAT`, `NO_LITERAL_DOUBLE`, `NO_LITERAL_CHAR`, `NO_LITERAL_STRING`, `NO_LITERAL_BOOL`.

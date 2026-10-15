@@ -50,6 +50,33 @@ executar_negativo() {
     fi
 }
 
+executar_switch_positivo() {
+    local arquivo="$1"
+    local esperado="$2"
+    local ausente="${3:-}"
+    local casos_esperados="${4:-1}"
+    local saida status casos_encontrados
+
+    saida="$("$PARSER" < "$arquivo" 2>&1)"
+    status=$?
+    casos_encontrados="$(grep -Fc 'case: NO_CASE' <<< "$saida" || true)"
+
+    if [[ $status -eq 0 && "$saida" == *"Analise sintatica concluida com sucesso."* \
+        && "$saida" == *"NO_SWITCH"* && "$saida" == *"NO_CASES"* \
+        && "$saida" == *"NO_CASE"* && "$saida" == *"NO_BREAK"* \
+        && "$saida" == *"$esperado"* \
+        && "$casos_encontrados" -eq "$casos_esperados" ]] \
+        && { [[ -z "$ausente" ]] || [[ "$saida" != *"$ausente"* ]]; }; then
+        printf '  [PASS] %s aceito e AST verificada\n' "$(basename "$arquivo")"
+        ((passou += 1))
+    else
+        printf '  [FAIL] %s deveria produzir a AST esperada (status %d)\n' \
+            "$(basename "$arquivo")" "$status"
+        printf '         Saida: %s\n' "${saida:-<sem saida>}"
+        ((falhou += 1))
+    fi
+}
+
 echo "=== Testes de comandos if ==="
 executar_positivo "$TEST_DIR/valido_if_simples.java"
 executar_positivo "$TEST_DIR/valido_if_else_aninhado.java"
@@ -68,6 +95,13 @@ executar_positivo "$TEST_DIR/valido_laco_do_while.java"
 executar_positivo "$TEST_DIR/valido_laco_for_completo.java"
 executar_positivo "$TEST_DIR/valido_laco_for_vazio.java"
 executar_negativo "$TEST_DIR/invalido_do_while_sem_ponto_virgula.java" 5
+
+echo "=== Testes de switch ==="
+executar_switch_positivo "$TEST_DIR/valido_switch_com_cases_e_default.java" \
+    "default: NO_DEFAULT" "" 2
+executar_switch_positivo "$TEST_DIR/valido_switch_sem_default.java" \
+    "default: <vazio>" "default: NO_DEFAULT" 1
+executar_negativo "$TEST_DIR/invalido_switch_sem_chaves.java" 4
 
 printf 'Resumo: %d passou, %d falhou.\n' "$passou" "$falhou"
 (( falhou == 0 ))

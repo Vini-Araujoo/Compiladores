@@ -32,6 +32,8 @@ NoAST *criarNo(TipoNoAST tipo, int linha);
 
 void adicionarFilho(NoAST *pai, NoAST *filho);
 
+void imprimirAST(const NoAST *raiz);
+
 void liberarAST(NoAST *raiz);
 
 #endif

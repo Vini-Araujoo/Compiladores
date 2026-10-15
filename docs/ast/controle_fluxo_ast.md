@@ -1,6 +1,6 @@
-# AST de Controle de Fluxo e Laços
+# AST de Controle de Fluxo, Laços e Seleção
 
-Este documento descreve a representação dos laços `while`, `do-while` e `for` na AST (Issue 7.2).
+Este documento descreve a representação dos laços `while`, `do-while` e `for` (Issue 7.2), além da seleção `switch` (Issue 7.3).
 
 ## Nós de repetição
 
@@ -51,3 +51,38 @@ Os casos de parser ficam em `tests/ast/` e são executados pelo script `tests/as
 - `invalido_do_while_sem_ponto_virgula.java`
 
 Os casos positivos verificam aceitação sintática; o caso negativo verifica a rejeição do `do-while` sem `;` e a linha informada. Esses testes não inspecionam a estrutura dos nós da AST.
+
+## Nós de seleção (`switch`)
+
+`NO_SWITCH` possui três posições: `filhos[0]` é a expressão seletora, `filhos[1]` é o nó `NO_CASES`, e `filhos[2]` é `NO_DEFAULT` ou `NULL` quando a cláusula padrão não existe. `NO_CASES` preserva a ordem dos ramos e contém um `NO_CASE` por cláusula `case`.
+
+Cada `NO_CASE` tem a expressão do rótulo em `filhos[0]` e o bloco de comandos associado em `filhos[1]`. `NO_DEFAULT`, quando presente, tem o bloco padrão em `filhos[0]`. `break;` é representado por um nó terminal `NO_BREAK`, sem filhos.
+
+Exemplo estrutural para `switch (2) { case 1: break; default: break; }`:
+
+```text
+NO_SWITCH
+├── seletor: NO_EXPRESSAO
+├── casos: NO_CASES
+│   └── case: NO_CASE
+│       ├── valor: NO_EXPRESSAO
+│       └── comandos: NO_BLOCO
+│           └── NO_BREAK
+└── default: NO_DEFAULT
+    └── comandos: NO_BLOCO
+        └── NO_BREAK
+```
+
+A regra de expressão ainda é um stub: ela valida a sintaxe, mas cria apenas `NO_EXPRESSAO`, sem guardar o literal nem os operandos. Assim, a AST já permite validar os nós e sua organização; a expressão seletora e os valores dos `case` não são impressos semanticamente ainda.
+
+## Impressão da AST
+
+`imprimirAST` percorre os nós e seus filhos, indica posições vazias e rotula os segmentos de `NO_FOR`, `NO_SWITCH`, `NO_CASE` e `NO_DEFAULT`. O executável chama essa rotina depois de uma análise sintática bem-sucedida, antes da mensagem de sucesso. A impressão usa os nós que as regras já conectaram à árvore; regras que ainda são stubs podem resultar em subárvores incompletas.
+
+## Testes de `switch`
+
+`make test-ast` também executa os casos de `tests/ast/`:
+
+- `valido_switch_com_cases_e_default.java`: exige a impressão de `NO_SWITCH`, lista e ramos, `NO_DEFAULT` e `NO_BREAK`.
+- `valido_switch_sem_default.java`: exige que a posição de `default` apareça vazia.
+- `invalido_switch_sem_chaves.java`: verifica rejeição sintática com número da linha.
