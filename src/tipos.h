@@ -51,6 +51,7 @@ typedef enum {
     NO_ACESSO_ARRAY,
 
     NO_CONDICAO,
+    NO_EXPRESSAO,
     NO_THEN,
 
     NO_IDENTIFICADOR,

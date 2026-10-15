@@ -11,6 +11,8 @@ Este documento descreve a representação dos laços `while`, `do-while` e `for`
 
 A ordem representa a ordem de execução e a forma sintática: `while` testa antes do bloco; `do-while` executa o bloco antes do teste. A condição é o nó produzido pela regra `condicao`; a construção interna da expressão pertence à etapa responsável por expressões.
 
+Enquanto essa etapa não estiver integrada, a regra `expressao` retorna um nó temporário `NO_EXPRESSAO` sem filhos. Ele permite que regras que dependem de uma expressão tenham um valor AST definido, mas não representa os operadores nem os operandos da expressão.
+
 ## Nó `NO_FOR`
 
 `NO_FOR` possui quatro posições fixas:

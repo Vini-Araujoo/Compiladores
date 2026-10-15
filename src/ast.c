@@ -62,5 +62,8 @@ void liberarAST(NoAST *raiz) {
         raiz->filhos = NULL;
     }
 
+    if (raiz->tipo_no == NO_IDENTIFICADOR) {
+        free(raiz->valor.valor_str);
+    }
     free(raiz);
 }

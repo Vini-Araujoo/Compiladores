@@ -79,6 +79,7 @@ typedef union {
 ### `void liberarAST(NoAST *raiz)`
 * Percorre recursivamente todos os nós filhos liberando memória em pós-ordem.
 * Libera o vetor de ponteiros `raiz->filhos`.
+* Libera `valor.valor_str` quando o nó é `NO_IDENTIFICADOR`.
 * Libera a estrutura `raiz`.
 
 ---
