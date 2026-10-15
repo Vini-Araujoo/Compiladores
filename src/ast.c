@@ -30,7 +30,7 @@ NoAST *criarNo(TipoNoAST tipo, int linha) {
 }
 
 void adicionarFilho(NoAST *pai, NoAST *filho) {
-    if (!pai || !filho) {
+    if (!pai) {
         return;
     }
 
@@ -62,5 +62,8 @@ void liberarAST(NoAST *raiz) {
         raiz->filhos = NULL;
     }
 
+    if (raiz->tipo_no == NO_IDENTIFICADOR) {
+        free(raiz->valor.valor_str);
+    }
     free(raiz);
 }

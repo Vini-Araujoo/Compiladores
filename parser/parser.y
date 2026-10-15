@@ -1,5 +1,6 @@
 %{
 #include <stdio.h>
+#include <stdlib.h>
 #include "../src/ast.h"
 
 int yylex(void);
@@ -12,7 +13,7 @@ NoAST *arvore = NULL;
 // primitivos
 %token TOKEN_BYTE
 %token TOKEN_SHORT
-%token ID
+%token <text> ID
 %token NUMERO
 %token TOKEN_INT
 %token TOKEN_LONG
@@ -121,47 +122,55 @@ NoAST *arvore = NULL;
 
 %union {
     NoAST *no;
+    char *text;
 }
 
-%type <no> bloco comando lista_comandos condicional condicao comando_if declaracao_local atribuicao comando_io repeticao comando_salto; 
+%destructor { free($$); } <text>
+
+%type <no> programa declaracao_classe corpo_classe membro_classe
+%type <no> bloco comando lista_comandos condicional condicao comando_if
+%type <no> declaracao_local atribuicao comando_io repeticao comando_salto
+%type <no> expressao
+%type <no> atribuicao_for condicao_for incremento_for
+%type <no> comando_for comando_do_while comando_while
 
 %%
 
 /* Estrutura do programa e blocos */
 
 programa:
-      declaracao_classe
+      declaracao_classe 
+        {
+            $$ = $1;
+            arvore = $$;
+        }
     //| lista_instrucoes_io
     //| %empty
     ;
 
 declaracao_classe:
         TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-        {
-            arvore = criarNo(NO_CLASSE, 1);
-        }
+        { $$ = $4; }
       | TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-        {
-            arvore = criarNo(NO_CLASSE, 1);
-        }
+        { $$ = $5; }
       | TOKEN_PUBLIC TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-        {
-            arvore = criarNo(NO_CLASSE, 1);
-        }
+        { $$ = $5; }
       | TOKEN_PUBLIC TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-        {
-            arvore = criarNo(NO_CLASSE, 1);
-        }
+        { $$ = $6; }
     ;
 
 corpo_classe:
-      %empty
-      | corpo_classe membro_classe
+      %empty { $$ = criarNo(NO_CLASSE, 0); }
+      | corpo_classe membro_classe 
+        {
+            adicionarFilho($1, $2);
+            $$ = $1;
+        }
     ;
 
 membro_classe:
-        declaracao_variavel
-      | declaracao_metodo  
+        declaracao_variavel { $$ = criarNo(NO_VAR_DECL, 0); }
+      | declaracao_metodo { $$ = criarNo(NO_METODO, 0); }
     ;
 
 
@@ -261,22 +270,27 @@ comando:
 /* Expressões e comandos básicos */
 
 expressao:
-      expressao TOKEN_OU expressao
-    | expressao TOKEN_E expressao
-       | expressao TOKEN_MAIS expressao
-    | expressao TOKEN_MENOS expressao
-    | expressao TOKEN_VEZES expressao
-    | expressao TOKEN_DIV expressao
-    | expressao TOKEN_MENOR expressao
-    | expressao TOKEN_MAIOR expressao
-    | expressao TOKEN_MENOR_IGUAL expressao
-    | expressao TOKEN_MAIOR_IGUAL expressao
-    | expressao TOKEN_IGUAL expressao
-    | expressao TOKEN_DIFERENTE expressao
-    | TOKEN_NEGACAO expressao
-    | TOKEN_MENOS expressao %prec UMINUS
-    | TOKEN_ABRE_PAR expressao TOKEN_FECHA_PAR
-    | ID
+      expressao_sintatica { $$ = criarNo(NO_EXPRESSAO, 0); }
+    ;
+
+/* Stub: valida a sintaxe da expressão sem construir sua subárvore. */
+expressao_sintatica:
+      expressao_sintatica TOKEN_OU expressao_sintatica
+    | expressao_sintatica TOKEN_E expressao_sintatica
+    | expressao_sintatica TOKEN_MAIS expressao_sintatica
+    | expressao_sintatica TOKEN_MENOS expressao_sintatica
+    | expressao_sintatica TOKEN_VEZES expressao_sintatica
+    | expressao_sintatica TOKEN_DIV expressao_sintatica
+    | expressao_sintatica TOKEN_MENOR expressao_sintatica
+    | expressao_sintatica TOKEN_MAIOR expressao_sintatica
+    | expressao_sintatica TOKEN_MENOR_IGUAL expressao_sintatica
+    | expressao_sintatica TOKEN_MAIOR_IGUAL expressao_sintatica
+    | expressao_sintatica TOKEN_IGUAL expressao_sintatica
+    | expressao_sintatica TOKEN_DIFERENTE expressao_sintatica
+    | TOKEN_NEGACAO expressao_sintatica
+    | TOKEN_MENOS expressao_sintatica %prec UMINUS
+    | TOKEN_ABRE_PAR expressao_sintatica TOKEN_FECHA_PAR
+    | ID { free($1); }
     | NUMERO
     | TOKEN_TRUE
     | TOKEN_FALSE
@@ -440,43 +454,96 @@ condicional:
 /* Laços de repetição */
 
 atribuicao_for:
-      TOKEN_PTOVIRG
-    | ID TOKEN_ATRIB expressao TOKEN_PTOVIRG
-    | declaracao_local
+      TOKEN_PTOVIRG { $$ = NULL; }
+    | ID TOKEN_ATRIB expressao TOKEN_PTOVIRG 
+        { 
+            $$ = criarNo(NO_ATRIBUICAO, 0); 
+            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            id->valor.valor_str = $1;
+            adicionarFilho($$, id);
+            adicionarFilho($$, $3);
+        }
+    | declaracao_local { $$ = $1; }
     ;
 
 condicao_for:
-      TOKEN_PTOVIRG
-    | condicao TOKEN_PTOVIRG
+      TOKEN_PTOVIRG { $$ = NULL; }
+    | condicao TOKEN_PTOVIRG { $$ = $1; }
     ;
 
 incremento_for:
-      %empty
-    | ID TOKEN_ATRIB expressao
+      %empty { $$ = NULL; }
+    | ID TOKEN_ATRIB expressao 
+    { 
+        $$ = criarNo(NO_ATRIBUICAO, 0);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        id->valor.valor_str = $1;
+        adicionarFilho($$, id);
+        adicionarFilho($$, $3);
+    }
     | ID TOKEN_INCREMENTO
+    {
+        $$ = criarNo(NO_INCREMENTO, 0);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        id->valor.valor_str = $1;
+        adicionarFilho($$, id);
+    }
     | ID TOKEN_DECREMENTO
+    {
+        $$ = criarNo(NO_DECREMENTO, 0);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        id->valor.valor_str = $1;
+        adicionarFilho($$, id);
+    }
     | TOKEN_INCREMENTO ID
+    {
+        $$ = criarNo(NO_INCREMENTO_ANTES, 0);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        id->valor.valor_str = $2;
+        adicionarFilho($$, id);
+    }
     | TOKEN_DECREMENTO ID
+    {
+        $$ = criarNo(NO_DECREMENTO_ANTES, 0);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        id->valor.valor_str = $2;
+        adicionarFilho($$, id);
+    }
     ;
 
 repeticao:
-      comando_for
-    | comando_do_while
-    | comando_while
+      comando_for { $$ = $1; }
+    | comando_do_while { $$ = $1; }
+    | comando_while { $$ = $1; }
     ;
 
 comando_for:
-    TOKEN_FOR TOKEN_ABRE_PAR atribuicao_for condicao_for incremento_for
-    TOKEN_FECHA_PAR bloco
+    TOKEN_FOR TOKEN_ABRE_PAR atribuicao_for condicao_for incremento_for TOKEN_FECHA_PAR bloco
+    {
+        $$ = criarNo(NO_FOR, 0);
+        adicionarFilho($$, $3);
+        adicionarFilho($$, $4);
+        adicionarFilho($$, $5);
+        adicionarFilho($$, $7);
+    }
     ;
 
 comando_do_while:
-    TOKEN_DO bloco TOKEN_WHILE TOKEN_ABRE_PAR condicao TOKEN_FECHA_PAR
-    TOKEN_PTOVIRG
+    TOKEN_DO bloco TOKEN_WHILE TOKEN_ABRE_PAR condicao TOKEN_FECHA_PAR TOKEN_PTOVIRG
+    {
+        $$ = criarNo(NO_DO_WHILE, 0);
+        adicionarFilho($$, $2);
+        adicionarFilho($$, $5);
+    }
     ;
 
 comando_while:
     TOKEN_WHILE TOKEN_ABRE_PAR condicao TOKEN_FECHA_PAR bloco
+    {
+        $$ = criarNo(NO_WHILE, 0);
+        adicionarFilho($$, $3);
+        adicionarFilho($$, $5);
+    }
     ;
 
 %%

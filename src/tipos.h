@@ -35,6 +35,10 @@ typedef enum {
     NO_RETURN,
     NO_BREAK,
 
+    NO_INCREMENTO,
+    NO_DECREMENTO,
+    NO_INCREMENTO_ANTES,
+    NO_DECREMENTO_ANTES,
     NO_ATRIBUICAO,
     NO_PRINT,
     NO_PRINTLN,
@@ -47,6 +51,7 @@ typedef enum {
     NO_ACESSO_ARRAY,
 
     NO_CONDICAO,
+    NO_EXPRESSAO,
     NO_THEN,
 
     NO_IDENTIFICADOR,

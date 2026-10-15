@@ -19,9 +19,11 @@ Atualmente, a gramática reconhece a estrutura de um programa com uma classe de 
     - [Expressões e Operadores](docs/grammar/expressoes.md) (Issue 2)
     - [Controle de Fluxo e Blocos](docs/grammar/controle_fluxo.md) (Issue 3)
     - [Entrada, Saída e Arrays](docs/grammar/io_arrays.md) (Issue 5)
+  - [`docs/ast/controle_fluxo_ast.md`](docs/ast/controle_fluxo_ast.md): Representação dos laços na AST (Issue 7.2).
   - [Erros Conhecidos e Limitações](docs/erros-conhecidos.md): Comportamentos e casos de borda mapeados.
 - `tests/`: Casos de teste organizados por fase e por issue:
   - `tests/parser/`: Casos de teste sintáticos (`issue_1` a `issue_5`) e suíte automatizada (`run-tests.sh`).
+  - `tests/ast/`: Testes unitários da AST e casos sintáticos de comandos `if` e laços.
 
 ---
 

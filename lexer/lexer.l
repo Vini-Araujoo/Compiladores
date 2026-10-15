@@ -3,6 +3,7 @@
 
 %{
 #include <stdio.h>
+#include <string.h>
 #include "parser.tab.h"
 
 %}
@@ -91,7 +92,10 @@
 "||"            { return TOKEN_OU;              }
 
 
-[a-zA-Z_][a-zA-Z_0-9]*  { return ID; }
+[a-zA-Z_][a-zA-Z_0-9]*  { 
+    yylval.text = strdup(yytext);
+    return ID; 
+}
 [0-9]+                  { return NUMERO; }
 [ \t\r\n]+      { /* ignora espaços, tabs e quebras de linha */ }
 .               { fprintf(stderr, "Caractere desconhecido: '%s' (ASCII: %d)\n", yytext, (unsigned char)yytext[0]); }
