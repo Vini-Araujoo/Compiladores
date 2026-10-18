@@ -111,7 +111,8 @@ static void imprimirASTRec(const NoAST *no, const char *prefixo,
     }
 
     printf("%s", nomeTipoNoAST(no->tipo_no));
-    if (no->tipo_no == NO_IDENTIFICADOR && no->valor.valor_str) {
+    if ((no->tipo_no == NO_CLASSE || no->tipo_no == NO_IDENTIFICADOR) &&
+        no->valor.valor_str) {
         printf(" (%s)", no->valor.valor_str);
     } else if (no->tipo_no == NO_LITERAL_INT) {
         printf(" (%ld)", no->valor.valor_int);
@@ -161,7 +162,8 @@ void liberarAST(NoAST *raiz) {
         raiz->filhos = NULL;
     }
 
-    if (raiz->tipo_no == NO_IDENTIFICADOR) {
+    if (raiz->tipo_no == NO_CLASSE ||
+        raiz->tipo_no == NO_IDENTIFICADOR) {
         free(raiz->valor.valor_str);
     }
     free(raiz);

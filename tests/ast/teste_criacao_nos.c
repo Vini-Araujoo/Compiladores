@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include "../../src/ast.h"
 
@@ -16,7 +17,7 @@ int main(void) {
 
     /* 2. Criar e adicionar nó de classe */
     NoAST *classe = criarNo(NO_CLASSE, 2);
-    classe->valor.valor_str = "MinhaClasse";
+    classe->valor.valor_str = strdup("MinhaClasse");
     adicionarFilho(raiz, classe);
     assert(raiz->num_filhos == 1);
     assert(raiz->filhos[0] == classe);

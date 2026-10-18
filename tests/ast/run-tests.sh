@@ -50,6 +50,26 @@ executar_negativo() {
     fi
 }
 
+executar_classe_positiva() {
+    local arquivo="$1"
+    local classe="$2"
+    local saida status
+
+    saida="$("$PARSER" < "$arquivo" 2>&1)"
+    status=$?
+
+    if [[ $status -eq 0 && "$saida" == *"NO_CLASSE (${classe})"* \
+        && "$saida" == *"Analise sintatica concluida com sucesso."* ]]; then
+        printf '  [PASS] %s foi aceito e a AST da classe foi verificada\n' "$(basename "$arquivo")"
+        ((passou += 1))
+    else
+        printf '  [FAIL] %s deveria produzir NO_CLASSE (%s) (status %d)\n' \
+            "$(basename "$arquivo")" "$classe" "$status"
+        printf '         Saida: %s\n' "${saida:-<sem saida>}"
+        ((falhou += 1))
+    fi
+}
+
 executar_switch_positivo() {
     local arquivo="$1"
     local esperado="$2"
@@ -76,6 +96,11 @@ executar_switch_positivo() {
         ((falhou += 1))
     fi
 }
+
+echo "=== Testes de declaracao de classe ==="
+executar_classe_positiva "$TEST_DIR/valido_classe_simples.java" "Simples"
+executar_classe_positiva "$TEST_DIR/valido_classe_com_modificadores.java" "ComModificadores"
+executar_negativo "$TEST_DIR/invalido_classe_sem_nome.java" 1
 
 echo "=== Testes de comandos if ==="
 executar_positivo "$TEST_DIR/valido_if_simples.java"
