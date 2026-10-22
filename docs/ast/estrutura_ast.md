@@ -8,7 +8,7 @@ Documentação técnica da infraestrutura básica da AST para o compilador Java-
 
 A AST (Árvore Sintática Abstrata) é a representação intermediária em memória do programa Java parseado. Diferente de uma árvore binária simples (que atende apenas expressões aritméticas), a AST deste compilador utiliza uma **árvore N-ária genérica**, na qual cada nó pode conter múltiplos nós filhos por meio de um vetor dinamicamente redimensionável.
 
-Essa estrutura permite representar com fidelidade construções de alto nível da linguagem Java, tais como classes com múltiplos atributos/métodos, blocos de comandos com dezenas de instruções e métodos com listas de parâmetros.
+Essa estrutura permite representar com fidelidade construções de alto nível da linguagem Java, tais como classes com múltiplos atributos/métodos, blocos de comandos com dezenas de instruções e métodos com listas de parâmetros. A AST armazena as informações necessárias para as etapas seguintes do compilador, sem precisar manter tokens puramente sintáticos como chaves, parênteses e ponto e vírgula.
 
 ---
 
@@ -62,7 +62,52 @@ typedef union {
 
 ---
 
-## 4. Gerenciamento Dinâmico de Filhos (`src/ast.c`)
+## 4. Representação de classes
+
+O projeto aceita uma classe por programa. Por isso, o nó `NO_CLASSE` é a raiz da AST:
+
+```text
+NO_CLASSE (Main)
+├── membro da classe
+└── membro da classe
+```
+
+O nome da classe é armazenado em `raiz->valor.valor_str`. Ele não é um filho da classe, pois os filhos diretos ficam reservados para atributos e métodos:
+
+```c
+classe->tipo_no = NO_CLASSE;
+classe->valor.valor_str = nome_da_classe;
+```
+
+A regra `corpo_classe` cria o nó acumulador e adiciona cada `membro_classe` diretamente a ele. A regra `declaracao_classe` associa o identificador reconhecido pelo lexer ao campo `valor.valor_str` do nó:
+
+```yacc
+declaracao_classe:
+    TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
+    { $$ = finalizar_declaracao_classe($4, $2); }
+;
+
+corpo_classe:
+    %empty { $$ = criarNo(NO_CLASSE, 0); }
+  | corpo_classe membro_classe
+    {
+        adicionarFilho($1, $2);
+        $$ = $1;
+    }
+;
+```
+
+Assim, para `class Main {}`, a impressão da AST é:
+
+```text
+NO_CLASSE (Main)
+```
+
+Para uma classe com membros, cada atributo ou método aparece como filho direto de `NO_CLASSE`.
+
+Os modificadores `public` e `final` são aceitos pela gramática. Como a tradução atual para C não utiliza esses modificadores, eles não geram nós separados na AST.
+
+## 5. Gerenciamento Dinâmico de Filhos (`src/ast.c`)
 
 ### `NoAST *criarNo(TipoNoAST tipo, int linha)`
 * Aloca a estrutura do nó com `malloc`.
@@ -79,18 +124,25 @@ typedef union {
 ### `void liberarAST(NoAST *raiz)`
 * Percorre recursivamente todos os nós filhos liberando memória em pós-ordem.
 * Libera o vetor de ponteiros `raiz->filhos`.
-* Libera `valor.valor_str` quando o nó é `NO_IDENTIFICADOR`.
+* Libera `valor.valor_str` quando o nó é `NO_CLASSE` ou `NO_IDENTIFICADOR`.
 * Libera a estrutura `raiz`.
 
 ---
 
-## 5. Testes Unitários
+## 6. Testes
 
 A suíte da AST possui testes dedicados em `tests/ast/`:
 1. **`teste_criacao_nos.c`**: Valida criação de nós raiz, classes, métodos e inserção de múltiplos filhos com expansão de capacidade além do limite inicial.
 2. **`teste_adicionar_filho_nulo.c`**: Valida que pais nulos são ignorados e que filhos nulos ocupam uma posição sem deslocar os filhos seguintes.
+3. **`valido_classe_simples.java`**: Verifica uma classe vazia e a impressão de `NO_CLASSE` com seu nome.
+4. **`valido_classe_com_modificadores.java`**: Verifica uma classe `public final`.
+5. **`invalido_classe_sem_nome.java`**: Verifica a rejeição sintática de uma classe sem identificador.
+
+Foram implementados testes positivos e negativos para a declaração de classes. Os casos de classe são executados pelo script `tests/ast/run-tests.sh`, que valida tanto o código de saída quanto a presença de `NO_CLASSE (Nome)` na saída do parser. O mesmo script também executa os testes de condicionais, laços e `switch` já existentes.
 
 Para compilar e executar os testes:
 ```bash
 make test-ast
 ```
+
+A execução atual da suíte resulta em 21 casos aprovados e 0 falhas.

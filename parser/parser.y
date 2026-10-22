@@ -8,6 +8,12 @@ void yyerror(const char *mensagem);
 extern int yylineno;
 
 NoAST *arvore = NULL;
+
+// Armazena o nome da classe no proprio no da classe.
+static NoAST *finalizar_declaracao_classe(NoAST *classe, char *nome) {
+    classe->valor.valor_str = nome;
+    return classe;
+}
 %}
 
 // primitivos
@@ -152,13 +158,13 @@ programa:
 
 declaracao_classe:
         TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-        { free($2); $$ = $4; }
+        { $$ = finalizar_declaracao_classe($4, $2); }
       | TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-        { free($3); $$ = $5; }
+        { $$ = finalizar_declaracao_classe($5, $3); }
       | TOKEN_PUBLIC TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-        { free($3); $$ = $5; }
+        { $$ = finalizar_declaracao_classe($5, $3); }
       | TOKEN_PUBLIC TOKEN_FINAL TOKEN_CLASS ID TOKEN_ABRE_CHAVE corpo_classe TOKEN_FECHA_CHAVE
-        { free($4); $$ = $6; }
+        { $$ = finalizar_declaracao_classe($6, $4); }
     ;
 
 corpo_classe:
