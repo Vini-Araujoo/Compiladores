@@ -97,10 +97,37 @@ executar_switch_positivo() {
     fi
 }
 
+executar_metodo_positivo() {
+    local arquivo="$1"
+    local metodo="$2"
+    local saida status
+
+    saida="$("$PARSER" < "$arquivo" 2>&1)"
+    status=$?
+
+    if [[ $status -eq 0 && "$saida" == *"NO_METODO (${metodo})"* \
+        && "$saida" == *"NO_PARAMETROS"* \
+        && "$saida" == *"NO_BLOCO"* \
+        && "$saida" == *"Analise sintatica concluida com sucesso."* ]]; then
+        printf '  [PASS] %s aceito e AST de metodo verificada\n' "$(basename "$arquivo")"
+        ((passou += 1))
+    else
+        printf '  [FAIL] %s deveria produzir NO_METODO (%s) (status %d)\n' \
+            "$(basename "$arquivo")" "$metodo" "$status"
+        printf '         Saida: %s\n' "${saida:-<sem saida>}"
+        ((falhou += 1))
+    fi
+}
+
 echo "=== Testes de declaracao de classe ==="
 executar_classe_positiva "$TEST_DIR/valido_classe_simples.java" "Simples"
 executar_classe_positiva "$TEST_DIR/valido_classe_com_modificadores.java" "ComModificadores"
 executar_negativo "$TEST_DIR/invalido_classe_sem_nome.java" 1
+
+echo "=== Testes de declaracao de metodos ==="
+executar_metodo_positivo "$TEST_DIR/valido_metodo_main.java" "main"
+executar_metodo_positivo "$TEST_DIR/valido_metodo_multiplos_params.java" "calcular"
+executar_negativo "$TEST_DIR/invalido_metodo_sem_parenteses.java" 2
 
 echo "=== Testes de comandos if ==="
 executar_positivo "$TEST_DIR/valido_if_simples.java"
@@ -130,3 +157,4 @@ executar_negativo "$TEST_DIR/invalido_switch_sem_chaves.java" 4
 
 printf 'Resumo: %d passou, %d falhou.\n' "$passou" "$falhou"
 (( falhou == 0 ))
+

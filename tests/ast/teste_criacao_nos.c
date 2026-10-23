@@ -36,7 +36,18 @@ int main(void) {
         assert(classe->filhos[i]->linha == 3 + i);
     }
 
-    /* 4. Liberar árvore completa */
+    /* 4. Testar nós de parâmetros e parâmetro */
+    NoAST *params = criarNo(NO_PARAMETROS, 15);
+    NoAST *p1 = criarNo(NO_PARAMETRO, 15);
+    p1->tipo_dado = TIPO_INT;
+    p1->valor.valor_str = strdup("x");
+    adicionarFilho(params, p1);
+    assert(params->num_filhos == 1);
+    assert(params->filhos[0]->tipo_no == NO_PARAMETRO);
+    assert(strcmp(params->filhos[0]->valor.valor_str, "x") == 0);
+    adicionarFilho(classe->filhos[0], params);
+
+    /* 5. Liberar árvore completa */
     liberarAST(raiz);
 
     printf("teste_criacao_nos passou com sucesso!\n");

@@ -20,6 +20,7 @@ typedef enum {
     NO_PROGRAMA,
     NO_CLASSE,
     NO_METODO,
+    NO_PARAMETROS,
     NO_PARAMETRO,
     NO_VAR_DECL,
     NO_BLOCO,
