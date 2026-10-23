@@ -117,6 +117,17 @@ static void imprimirASTRec(const NoAST *no, const char *prefixo,
         printf(" (%s)", no->valor.valor_str);
     } else if (no->tipo_no == NO_LITERAL_INT) {
         printf(" (%ld)", no->valor.valor_int);
+    } else if (no->tipo_no == NO_LITERAL_FLOAT || no->tipo_no == NO_LITERAL_DOUBLE) {
+        printf(" (%g)", no->valor.valor_double);
+    } else if (no->tipo_no == NO_LITERAL_STRING && no->valor.valor_str) {
+        printf(" (\"%s\")", no->valor.valor_str);
+    } else if (no->tipo_no == NO_LITERAL_CHAR) {
+        printf(" ('%c')", (char)no->valor.valor_int);
+    } else if (no->tipo_no == NO_LITERAL_BOOL) {
+        printf(" (%s)", no->valor.valor_int ? "true" : "false");
+    } else if ((no->tipo_no == NO_OP_BINARIA || no->tipo_no == NO_OP_UNARIA) &&
+               no->valor.operador[0]) {
+        printf(" (%s)", no->valor.operador);
     }
     putchar('\n');
 
@@ -166,7 +177,8 @@ void liberarAST(NoAST *raiz) {
     if (raiz->tipo_no == NO_CLASSE ||
         raiz->tipo_no == NO_IDENTIFICADOR ||
         raiz->tipo_no == NO_METODO ||
-        raiz->tipo_no == NO_PARAMETRO) {
+        raiz->tipo_no == NO_PARAMETRO ||
+        raiz->tipo_no == NO_LITERAL_STRING) {
         free(raiz->valor.valor_str);
     }
     free(raiz);
