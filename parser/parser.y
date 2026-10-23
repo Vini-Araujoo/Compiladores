@@ -14,6 +14,20 @@ static NoAST *finalizar_declaracao_classe(NoAST *classe, char *nome) {
     classe->valor.valor_str = nome;
     return classe;
 }
+
+/*
+membro_classe:
+      declaracao_variavel { $$ = criarNo(NO_VAR_DECL, 0); }
+      | declaracao_metodo { $$ = $1; }
+    ;
+
+*/
+static NoAST *cria_no_instancia_id(TipoNoAST tipo, TipoDado dadoRetorno, char *id) {
+    NoAST *no = criarNo(tipo, yylineno);
+    no->tipo_dado = dadoRetorno;
+    no->valor.valor_str = id;
+    return no;
+}
 %}
 
 // primitivos
@@ -129,6 +143,7 @@ static NoAST *finalizar_declaracao_classe(NoAST *classe, char *nome) {
 %union {
     NoAST *no;
     char *text;
+    TipoDado tipo_dado;
 }
 
 %destructor { free($$); } <text>
@@ -141,7 +156,8 @@ static NoAST *finalizar_declaracao_classe(NoAST *classe, char *nome) {
 %type <no> acesso_array
 %type <no> atribuicao_for condicao_for incremento_for
 %type <no> comando_for comando_do_while comando_while
-
+%type <tipo_dado> tipo
+%type <no> lista_parametros parametros_com_virgula parametro
 %%
 
 /* Estrutura do programa e blocos */
@@ -185,33 +201,59 @@ membro_classe:
 declaracao_metodo:
   modificadores tipo ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
     {
-        free($3);
-        $$ = criarNo(NO_METODO, 0);
+        //free($3);
+        //$$ = criarNo(NO_METODO, 0);
+        //adicionarFilho($$, $7);
+
+        $$ = cria_no_instancia_id(NO_METODO, $2, $3);
+        adicionarFilho($$, $5);
         adicionarFilho($$, $7);
     }
     | modificadores TOKEN_VOID ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
     {
-        free($3);
-        $$ = criarNo(NO_METODO, 0);
+        //free($3);
+        //$$ = criarNo(NO_METODO, 0);
+        //adicionarFilho($$, $7);
+        
+        $$ = cria_no_instancia_id(NO_METODO, TIPO_VOID, $3);
+        adicionarFilho($$, $5);
         adicionarFilho($$, $7);
     }
     ;
 
 lista_parametros:
         %empty
+        {
+            $$ = criarNo(NO_PARAMETROS, yylineno);
+        }
       | parametros_com_virgula
+        {
+            $$ = $1;
+        }
     ;
 
 parametros_com_virgula:
         parametro
+        {
+            $$ = criarNo(NO_PARAMETROS, yylineno);
+            adicionarFilho($$, $1);
+        }
       | parametros_com_virgula TOKEN_VIRGULA parametro
+        {
+            adicionarFilho($1, $3);
+            $$ = $1;
+        }
     ;
 
 parametro:
-        tipo ID { free($2); }
+        tipo ID
+        {
+            $$ = cria_no_instancia_id(NO_PARAMETRO, $1, $2);
+        }
       | tipo TOKEN_ABRE_COLCHETE TOKEN_FECHA_COLCHETE ID
-        { free($4); } /* String[] args */
-    
+        {
+            $$ = cria_no_instancia_id(NO_PARAMETRO, TIPO_ARRAY, $4);
+        }
     ;
 
 modificadores:
@@ -228,14 +270,23 @@ modificador:
     ;
 tipo:
         TOKEN_DOUBLE
+        {$$ = TIPO_DOUBLE; }
       | TOKEN_INT
+        {$$ = TIPO_INT; }
       | TOKEN_STRING_TIPO
+        {$$ = TIPO_STRING; }
       | TOKEN_LONG
+        {$$ = TIPO_LONG; }
       | TOKEN_BOOLEAN
+        {$$ = TIPO_BOOLEAN; }
       | TOKEN_SHORT
+        {$$ = TIPO_SHORT; }
       | TOKEN_CHAR
+        {$$ = TIPO_CHAR; }
       | TOKEN_FLOAT
+        {$$ = TIPO_FLOAT; }
       | TOKEN_SCANNER
+        {$$ = TIPO_SCANNER; }
     ;
 
 
