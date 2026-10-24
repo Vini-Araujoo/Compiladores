@@ -117,6 +117,10 @@ static void imprimirASTRec(const NoAST *no, const char *prefixo,
         printf(" (%s)", no->valor.valor_str);
     } else if (no->tipo_no == NO_LITERAL_INT) {
         printf(" (%ld)", no->valor.valor_int);
+    } else if (no->tipo_no == NO_LITERAL_DOUBLE) {
+        printf(" (%g)", no->valor.valor_double);
+    } else if (no->tipo_no == NO_OP_BINARIA) {
+        printf(" (%s)", no->valor.operador);
     }
     putchar('\n');
 

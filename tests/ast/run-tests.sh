@@ -119,6 +119,26 @@ executar_metodo_positivo() {
     fi
 }
 
+executar_arvore_positiva() {
+    local arquivo="$1"
+    local esperado="$2"
+    local saida status
+
+    saida="$("$PARSER" < "$arquivo" 2>&1)"
+    status=$?
+
+    if [[ $status -eq 0 && "$saida" == "$(cat "$esperado")" ]]; then
+        printf '  [PASS] %s aceito e arvore identica a %s\n' \
+            "$(basename "$arquivo")" "$(basename "$esperado")"
+        ((passou += 1))
+    else
+        printf '  [FAIL] %s deveria produzir a arvore de %s (status %d)\n' \
+            "$(basename "$arquivo")" "$(basename "$esperado")" "$status"
+        diff <(printf '%s\n' "$saida") "$esperado" | head -20 | sed 's/^/         /'
+        ((falhou += 1))
+    fi
+}
+
 echo "=== Testes de declaracao de classe ==="
 executar_classe_positiva "$TEST_DIR/valido_classe_simples.java" "Simples"
 executar_classe_positiva "$TEST_DIR/valido_classe_com_modificadores.java" "ComModificadores"
@@ -155,6 +175,12 @@ executar_switch_positivo "$TEST_DIR/valido_switch_sem_default.java" \
     "default: <vazio>" "default: NO_DEFAULT" 1
 executar_negativo "$TEST_DIR/invalido_switch_sem_chaves.java" 4
 
+echo "=== Testes de expressoes aritmeticas ==="
+executar_arvore_positiva "$TEST_DIR/valido_precedencia_aritmetica.java" \
+    "$TEST_DIR/esperado/valido_precedencia_aritmetica.txt"
+executar_arvore_positiva "$TEST_DIR/valido_expressao_com_parenteses.java" \
+    "$TEST_DIR/esperado/valido_expressao_com_parenteses.txt"
+executar_negativo "$TEST_DIR/invalido_operador_sem_operando.java" 3
+
 printf 'Resumo: %d passou, %d falhou.\n' "$passou" "$falhou"
 (( falhou == 0 ))
-
