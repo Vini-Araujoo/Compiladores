@@ -13,7 +13,7 @@ PARSER_GENERATED_C := $(BUILD_DIR)/parser.tab.c
 PARSER_GENERATED_H := $(BUILD_DIR)/parser.tab.h
 PARSER_BINARY := $(BUILD_DIR)/parser
 
-.PHONY: all parser test test-ast clean
+.PHONY: all parser test test-ast test-tabela test-semantic clean
 
 all: parser
 
@@ -29,6 +29,16 @@ test-ast: parser | $(BUILD_DIR)
 	@$(BUILD_DIR)/teste_adicionar_filho_nulo
 	@bash tests/ast/run-tests.sh
 	@echo "Todos os testes unitários da AST passaram com sucesso!"
+
+test-tabela: | $(BUILD_DIR)
+	@$(CC) $(CFLAGS) -Isrc src/tabela.c tests/semantic/teste_pilha_escopos.c -o $(BUILD_DIR)/teste_pilha_escopos
+	@$(CC) $(CFLAGS) -Isrc src/tabela.c tests/semantic/teste_busca_apos_fechamento_escopo.c -o $(BUILD_DIR)/teste_busca_apos_fechamento_escopo
+	@$(BUILD_DIR)/teste_pilha_escopos
+	@$(BUILD_DIR)/teste_busca_apos_fechamento_escopo
+	@bash tests/semantic/run-tests.sh
+	@echo "Todos os testes unitários da tabela de símbolos passaram com sucesso!"
+
+test-semantic: test-tabela
 
 $(PARSER_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast.c src/ast.h src/tabela.c src/tabela.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast.c src/tabela.c -o $@
