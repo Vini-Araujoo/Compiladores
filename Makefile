@@ -30,8 +30,8 @@ test-ast: parser | $(BUILD_DIR)
 	@bash tests/ast/run-tests.sh
 	@echo "Todos os testes unitários da AST passaram com sucesso!"
 
-$(PARSER_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast.c src/ast.h | $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast.c -o $@
+$(PARSER_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast.c src/ast.h src/tabela.c src/tabela.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast.c src/tabela.c -o $@
 
 $(PARSER_GENERATED_C) $(PARSER_GENERATED_H): $(PARSER_SOURCE) | $(BUILD_DIR)
 	$(BISON) -d -o $(PARSER_GENERATED_C) $(PARSER_SOURCE)
