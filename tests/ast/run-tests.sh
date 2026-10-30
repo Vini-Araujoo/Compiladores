@@ -119,6 +119,33 @@ executar_metodo_positivo() {
     fi
 }
 
+executar_io_positivo() {
+    local arquivo="$1"
+    shift
+    local saida status marcador ausente=""
+
+    saida="$("$PARSER" < "$arquivo" 2>&1)"
+    status=$?
+
+    for marcador in "$@"; do
+        if ! grep -Eq -e "$marcador" <<< "$saida"; then
+            ausente="$marcador"
+            break
+        fi
+    done
+
+    if [[ $status -eq 0 && -z "$ausente" \
+        && "$saida" == *"Analise sintatica concluida com sucesso."* ]]; then
+        printf '  [PASS] %s aceito e AST de I/O verificada\n' "$(basename "$arquivo")"
+        ((passou += 1))
+    else
+        printf '  [FAIL] %s deveria produzir a AST de I/O esperada (status %d, ausente: %s)\n' \
+            "$(basename "$arquivo")" "$status" "${ausente:-nenhum}"
+        printf '         Saida: %s\n' "${saida:-<sem saida>}"
+        ((falhou += 1))
+    fi
+}
+
 echo "=== Testes de declaracao de classe ==="
 executar_classe_positiva "$TEST_DIR/valido_classe_simples.java" "Simples"
 executar_classe_positiva "$TEST_DIR/valido_classe_com_modificadores.java" "ComModificadores"
@@ -159,6 +186,19 @@ echo "=== Testes de arrays ==="
 executar_positivo "$TEST_DIR/valido_alocacao_array.java"
 executar_positivo "$TEST_DIR/valido_atribuicao_em_indice_array.java"
 executar_negativo "$TEST_DIR/invalido_array_sem_tamanho.java" 3
+
+echo "=== Testes de I/O (print e Scanner) ==="
+executar_io_positivo "$TEST_DIR/valido_io_print_expressao.java" \
+    'NO_PRINTLN$' 'NO_PRINT$' 'argumento: NO_EXPRESSAO' \
+    'NO_LITERAL_STRING \(Ola, mundo\)'
+executar_io_positivo "$TEST_DIR/valido_io_leitura_scanner.java" \
+    'NO_INSTANCIACAO_SCANNER' 'variavel: NO_IDENTIFICADOR \(leitor\)' \
+    'NO_LEITURA_SCANNER \(next\)' 'NO_LEITURA_SCANNER \(nextLine\)' \
+    'NO_LEITURA_SCANNER \(nextInt\)' 'NO_LEITURA_SCANNER \(nextDouble\)' \
+    'NO_LEITURA_SCANNER \(nextFloat\)' 'NO_LEITURA_SCANNER \(nextLong\)' \
+    'NO_LEITURA_SCANNER \(nextShort\)' 'NO_LEITURA_SCANNER \(nextByte\)' \
+    'NO_LEITURA_SCANNER \(nextBoolean\)'
+executar_negativo "$TEST_DIR/invalido_print_sem_parenteses.java" 3
 
 printf 'Resumo: %d passou, %d falhou.\n' "$passou" "$falhou"
 (( falhou == 0 ))
