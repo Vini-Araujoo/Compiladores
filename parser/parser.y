@@ -30,11 +30,61 @@ static NoAST *cria_no_instancia_id(TipoNoAST tipo, TipoDado dadoRetorno, char *i
     return no;
 }
 
-/* Stub de expressao: descarta os operandos (liberando a memoria) e devolve NULL. */
-static NoAST *descartar_operandos(NoAST *esquerdo, NoAST *direito) {
-    liberarAST(esquerdo);
-    liberarAST(direito);
-    return NULL;
+/* NO_OP_BINARIA: filhos[0] = operando esquerdo, filhos[1] = operando direito. */
+static NoAST *cria_no_op_binaria(const char *operador, NoAST *esquerda, NoAST *direita) {
+    NoAST *no = criarNo(NO_OP_BINARIA, esquerda->linha);
+    strncpy(no->valor.operador, operador, sizeof(no->valor.operador) - 1);
+    no->valor.operador[sizeof(no->valor.operador) - 1] = '\0';
+    adicionarFilho(no, esquerda);
+    adicionarFilho(no, direita);
+    return no;
+}
+
+/*
+ * NO_OP_UNARIA: filhos[0] = operando; valor.operador = "!", "-", "++" ou "--";
+ * posfixo indica a direcao (1 = x++ / x--, 0 = !x, -x, ++x, --x).
+ */
+static NoAST *cria_no_op_unaria(const char *operador, NoAST *operando, int posfixo) {
+    NoAST *no = criarNo(NO_OP_UNARIA, operando->linha);
+    strncpy(no->valor.operador, operador, sizeof(no->valor.operador) - 1);
+    no->valor.operador[sizeof(no->valor.operador) - 1] = '\0';
+    no->posfixo = posfixo;
+    adicionarFilho(no, operando);
+    return no;
+}
+
+static NoAST *cria_no_literal_int(long valor) {
+    NoAST *no = criarNo(NO_LITERAL_INT, yylineno);
+    no->valor.valor_int = valor;
+    return no;
+}
+
+static NoAST *cria_no_literal_double(double valor) {
+    NoAST *no = criarNo(NO_LITERAL_DOUBLE, yylineno);
+    no->valor.valor_double = valor;
+    return no;
+}
+
+/* NO_LITERAL_BOOL: valor.valor_int = 1 (true) ou 0 (false). */
+static NoAST *cria_no_literal_bool(int valor) {
+    NoAST *no = criarNo(NO_LITERAL_BOOL, yylineno);
+    no->valor.valor_int = valor;
+    return no;
+}
+
+/*
+ * Stub (Issue 9.1): no generico para as formas de expressao que pertencem a
+ * outras issues (chamadas de metodo e leitura do Scanner).
+ */
+static NoAST *cria_no_expressao_generica(NoAST *filho1, NoAST *filho2) {
+    NoAST *no = criarNo(NO_EXPRESSAO, yylineno);
+    if (filho1) {
+        adicionarFilho(no, filho1);
+    }
+    if (filho2) {
+        adicionarFilho(no, filho2);
+    }
+    return no;
 }
 %}
 
@@ -42,7 +92,8 @@ static NoAST *descartar_operandos(NoAST *esquerdo, NoAST *direito) {
 %token TOKEN_BYTE
 %token TOKEN_SHORT
 %token <text> ID
-%token NUMERO
+%token <inteiro> NUMERO
+%token <real> NUMERO_DOUBLE
 %token <text> TOKEN_STRING_LITERAL
 %token TOKEN_INT
 %token TOKEN_LONG
@@ -65,6 +116,7 @@ static NoAST *descartar_operandos(NoAST *esquerdo, NoAST *direito) {
 %token TOKEN_MENOS
 %token TOKEN_VEZES
 %token TOKEN_DIV
+%token TOKEN_MOD
 %token TOKEN_E
 %token TOKEN_OU
 
@@ -132,13 +184,22 @@ static NoAST *descartar_operandos(NoAST *esquerdo, NoAST *direito) {
 %token TOKEN_DOIS_PONTOS
 
 // Precedencia e associatividade das expressoes, da menor para a maior.
+/*
+ * ID e ';' (menor e maior precedencia desta lista) resolvem a ambiguidade entre
+ * os comandos "i++;" / "++i;" de atribuicao e o unario ++/-- de expressao:
+ * como comando isolado vale a regra de atribuicao; dentro de uma expressao
+ * (ex.: x = i++;) vale o NO_OP_UNARIA.
+ */
+%precedence ID
 %left   TOKEN_OU
 %left   TOKEN_E
 %left   TOKEN_IGUAL TOKEN_DIFERENTE
 %left   TOKEN_MENOR TOKEN_MAIOR TOKEN_MENOR_IGUAL TOKEN_MAIOR_IGUAL
 %left   TOKEN_MAIS TOKEN_MENOS
-%left   TOKEN_VEZES TOKEN_DIV
+%left   TOKEN_VEZES TOKEN_DIV TOKEN_MOD
 %precedence TOKEN_NEGACAO UMINUS
+%precedence TOKEN_INCREMENTO TOKEN_DECREMENTO
+%precedence TOKEN_PTOVIRG
 
 %start programa
 
@@ -153,6 +214,8 @@ static NoAST *descartar_operandos(NoAST *esquerdo, NoAST *direito) {
     NoAST *no;
     char *text;
     TipoDado tipo_dado;
+    long inteiro;
+    double real;
 }
 
 %destructor { free($$); } <text>
@@ -162,9 +225,8 @@ static NoAST *descartar_operandos(NoAST *esquerdo, NoAST *direito) {
 %type <no> declaracao_local atribuicao comando_io repeticao comando_salto
 %type <no> expressao expressao_sintatica comando_return comando_switch casos_switch case_switch
 %type <no> default_switch declaracao_metodo comando_print argumento_opcional
-%type <no> acesso_array
+%type <no> acesso_array leitura_scanner chamada_metodo
 %type <no> instanciacao
-%type <no> leitura_scanner chamada_metodo
 %type <text> metodo_scanner
 %type <no> atribuicao_for condicao_for incremento_for
 %type <no> comando_for comando_do_while comando_while
@@ -353,69 +415,75 @@ comando:
 /* Expressões e comandos básicos */
 
 expressao:
-      expressao_sintatica
-        {
-            $$ = criarNo(NO_EXPRESSAO, yylineno);
-            if ($1 != NULL) {
-                adicionarFilho($$, $1);
-            }
-        }
+      expressao_sintatica { $$ = $1; }
     ;
 
 /*
- * Stub: valida a sintaxe da expressao. Todo caso devolve um ponteiro definido
- * (NULL ou um no valido). So literais de string, acessos a array, leituras do
- * Scanner e instanciacoes chegam a AST; operadores e demais folhas devolvem NULL.
+ * Issues 9.1 e 9.2: aritmetica, relacionais, logicos e unarios constroem a
+ * AST; a hierarquia vem das declaracoes de precedencia. Parenteses devolvem o
+ * no interno. Chamadas de metodo e Scanner ainda sao stubs genericos.
  */
 expressao_sintatica:
       expressao_sintatica TOKEN_OU expressao_sintatica
-        { $$ = descartar_operandos($1, $3); }
+        { $$ = cria_no_op_binaria("||", $1, $3); }
     | expressao_sintatica TOKEN_E expressao_sintatica
-        { $$ = descartar_operandos($1, $3); }
+        { $$ = cria_no_op_binaria("&&", $1, $3); }
     | expressao_sintatica TOKEN_MAIS expressao_sintatica
-        { $$ = descartar_operandos($1, $3); }
+        { $$ = cria_no_op_binaria("+", $1, $3); }
     | expressao_sintatica TOKEN_MENOS expressao_sintatica
-        { $$ = descartar_operandos($1, $3); }
+        { $$ = cria_no_op_binaria("-", $1, $3); }
     | expressao_sintatica TOKEN_VEZES expressao_sintatica
-        { $$ = descartar_operandos($1, $3); }
+        { $$ = cria_no_op_binaria("*", $1, $3); }
     | expressao_sintatica TOKEN_DIV expressao_sintatica
-        { $$ = descartar_operandos($1, $3); }
+        { $$ = cria_no_op_binaria("/", $1, $3); }
+    | expressao_sintatica TOKEN_MOD expressao_sintatica
+        { $$ = cria_no_op_binaria("%", $1, $3); }
     | expressao_sintatica TOKEN_MENOR expressao_sintatica
-        { $$ = descartar_operandos($1, $3); }
+        { $$ = cria_no_op_binaria("<", $1, $3); }
     | expressao_sintatica TOKEN_MAIOR expressao_sintatica
-        { $$ = descartar_operandos($1, $3); }
+        { $$ = cria_no_op_binaria(">", $1, $3); }
     | expressao_sintatica TOKEN_MENOR_IGUAL expressao_sintatica
-        { $$ = descartar_operandos($1, $3); }
+        { $$ = cria_no_op_binaria("<=", $1, $3); }
     | expressao_sintatica TOKEN_MAIOR_IGUAL expressao_sintatica
-        { $$ = descartar_operandos($1, $3); }
+        { $$ = cria_no_op_binaria(">=", $1, $3); }
     | expressao_sintatica TOKEN_IGUAL expressao_sintatica
-        { $$ = descartar_operandos($1, $3); }
+        { $$ = cria_no_op_binaria("==", $1, $3); }
     | expressao_sintatica TOKEN_DIFERENTE expressao_sintatica
-        { $$ = descartar_operandos($1, $3); }
+        { $$ = cria_no_op_binaria("!=", $1, $3); }
     | TOKEN_NEGACAO expressao_sintatica
-        { $$ = descartar_operandos($2, NULL); }
+        { $$ = cria_no_op_unaria("!", $2, 0); }
     | TOKEN_MENOS expressao_sintatica %prec UMINUS
-        { $$ = descartar_operandos($2, NULL); }
+        { $$ = cria_no_op_unaria("-", $2, 0); }
+    | TOKEN_INCREMENTO expressao_sintatica %prec UMINUS
+        { $$ = cria_no_op_unaria("++", $2, 0); }
+    | TOKEN_DECREMENTO expressao_sintatica %prec UMINUS
+        { $$ = cria_no_op_unaria("--", $2, 0); }
+    | expressao_sintatica TOKEN_INCREMENTO
+        { $$ = cria_no_op_unaria("++", $1, 1); }
+    | expressao_sintatica TOKEN_DECREMENTO
+        { $$ = cria_no_op_unaria("--", $1, 1); }
     | TOKEN_ABRE_PAR expressao_sintatica TOKEN_FECHA_PAR
         { $$ = $2; }
     | ID
-        { free($1); $$ = NULL; }
+        { $$ = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1); }
     | NUMERO
-        { $$ = NULL; }
+        { $$ = cria_no_literal_int($1); }
+    | NUMERO_DOUBLE
+        { $$ = cria_no_literal_double($1); }
+    | TOKEN_TRUE
+        { $$ = cria_no_literal_bool(1); }
+    | TOKEN_FALSE
+        { $$ = cria_no_literal_bool(0); }
     | TOKEN_STRING_LITERAL
         {
             $$ = criarNo(NO_LITERAL_STRING, yylineno);
             $$->tipo_dado = TIPO_STRING;
             $$->valor.valor_str = $1;
         }
-    | TOKEN_TRUE
-        { $$ = NULL; }
-    | TOKEN_FALSE
-        { $$ = NULL; }
-    | acesso_array
-    | leitura_scanner
-    | chamada_metodo
-    | instanciacao
+    | acesso_array { $$ = $1; }
+    | leitura_scanner { $$ = $1; }
+    | chamada_metodo { $$ = $1; }
+    | instanciacao { $$ = $1; }
     ;
 
 declaracao_local:
@@ -572,9 +640,9 @@ metodo_scanner:
 
 chamada_metodo:
       ID TOKEN_ABRE_PAR argumentos_opcionais TOKEN_FECHA_PAR
-        { free($1); $$ = NULL; }
+        { free($1); $$ = cria_no_expressao_generica(NULL, NULL); }
     | ID TOKEN_PONTO ID TOKEN_ABRE_PAR argumentos_opcionais TOKEN_FECHA_PAR
-        { free($1); free($3); $$ = NULL; }
+        { free($1); free($3); $$ = cria_no_expressao_generica(NULL, NULL); }
     ;
 
 argumentos_opcionais:
