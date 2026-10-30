@@ -3,6 +3,7 @@
 
 %{
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "parser.tab.h"
 
@@ -92,6 +93,13 @@
 "||"            { return TOKEN_OU;              }
 
 
+\"([^\"\\\n]|\\.)*\"  {
+    size_t tamanho = strlen(yytext) - 2;
+    yylval.text = (char *)malloc(tamanho + 1);
+    memcpy(yylval.text, yytext + 1, tamanho);
+    yylval.text[tamanho] = '\0';
+    return TOKEN_STRING_LITERAL;
+}
 [a-zA-Z_][a-zA-Z_0-9]*  { 
     yylval.text = strdup(yytext);
     return ID; 
