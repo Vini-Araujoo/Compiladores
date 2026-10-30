@@ -26,7 +26,6 @@ Atualmente, a gramática reconhece a estrutura de um programa com uma classe de 
 - `tests/`: Casos de teste organizados por fase e por issue:
   - `tests/parser/`: Casos de teste sintáticos (`issue_1` a `issue_5`) e suíte automatizada (`run-tests.sh`).
   - `tests/ast/`: Testes unitários da AST e casos sintáticos de comandos `if` e laços.
-  - `tests/semantic/`: Testes unitários da Tabela de Símbolos, pilha de escopos e validação semântica.
 
 ---
 
@@ -95,13 +94,6 @@ make test ISSUE=1
 # Diretamente via script:
 bash tests/parser/run-tests.sh 4
 bash tests/parser/run-tests.sh issue_1
-```
-
-### Executar testes da Tabela de Símbolos e Escopos (Issue 8.1)
-
-```bash
-make test-tabela
-# ou: make test-semantic
 ```
 
 ---

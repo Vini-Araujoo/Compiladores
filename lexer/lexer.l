@@ -78,7 +78,8 @@
 "+"             { return TOKEN_MAIS;            }
 "-"             { return TOKEN_MENOS;           }
 "*"             { return TOKEN_VEZES;           }
-"/"             { return TOKEN_DIV;             } 
+"/"             { return TOKEN_DIV;             }
+"%"             { return TOKEN_MOD;             }
 ";"             { return TOKEN_PTOVIRG;         }
 ","             { return TOKEN_VIRGULA;         }
 ":"             { return TOKEN_DOIS_PONTOS;     }
@@ -104,7 +105,14 @@
     yylval.text = strdup(yytext);
     return ID; 
 }
-[0-9]+                  { return NUMERO; }
+[0-9]+\.[0-9]+          {
+    yylval.real = strtod(yytext, NULL);
+    return NUMERO_DOUBLE;
+}
+[0-9]+                  {
+    yylval.inteiro = strtol(yytext, NULL, 10);
+    return NUMERO;
+}
 [ \t\r\n]+      { /* ignora espaços, tabs e quebras de linha */ }
 .               { fprintf(stderr, "Caractere desconhecido: '%s' (ASCII: %d)\n", yytext, (unsigned char)yytext[0]); }
 %%
