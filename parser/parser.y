@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../src/ast.h"
 
 int yylex(void);
@@ -28,6 +29,13 @@ static NoAST *cria_no_instancia_id(TipoNoAST tipo, TipoDado dadoRetorno, char *i
     no->valor.valor_str = id;
     return no;
 }
+
+/* Stub de expressao: descarta os operandos (liberando a memoria) e devolve NULL. */
+static NoAST *descartar_operandos(NoAST *esquerdo, NoAST *direito) {
+    liberarAST(esquerdo);
+    liberarAST(direito);
+    return NULL;
+}
 %}
 
 // primitivos
@@ -35,6 +43,7 @@ static NoAST *cria_no_instancia_id(TipoNoAST tipo, TipoDado dadoRetorno, char *i
 %token TOKEN_SHORT
 %token <text> ID
 %token NUMERO
+%token <text> TOKEN_STRING_LITERAL
 %token TOKEN_INT
 %token TOKEN_LONG
 %token TOKEN_BOOLEAN
@@ -151,10 +160,12 @@ static NoAST *cria_no_instancia_id(TipoNoAST tipo, TipoDado dadoRetorno, char *i
 %type <no> programa declaracao_classe corpo_classe membro_classe
 %type <no> bloco comando lista_comandos condicional condicao comando_if
 %type <no> declaracao_local atribuicao comando_io repeticao comando_salto
-%type <no> expressao comando_return comando_switch casos_switch case_switch
+%type <no> expressao expressao_sintatica comando_return comando_switch casos_switch case_switch
 %type <no> default_switch declaracao_metodo comando_print argumento_opcional
 %type <no> acesso_array
 %type <no> instanciacao
+%type <no> leitura_scanner chamada_metodo
+%type <text> metodo_scanner
 %type <no> atribuicao_for condicao_for incremento_for
 %type <no> comando_for comando_do_while comando_while
 %type <tipo_dado> tipo_base
@@ -342,30 +353,65 @@ comando:
 /* Expressões e comandos básicos */
 
 expressao:
-      expressao_sintatica { $$ = criarNo(NO_EXPRESSAO, 0); }
+      expressao_sintatica
+        {
+            $$ = criarNo(NO_EXPRESSAO, yylineno);
+            if ($1 != NULL) {
+                adicionarFilho($$, $1);
+            }
+        }
     ;
 
-/* Stub: valida a sintaxe da expressão sem construir sua subárvore. */
+/*
+ * Stub: valida a sintaxe da expressao. Todo caso devolve um ponteiro definido
+ * (NULL ou um no valido). So literais de string, acessos a array, leituras do
+ * Scanner e instanciacoes chegam a AST; operadores e demais folhas devolvem NULL.
+ */
 expressao_sintatica:
       expressao_sintatica TOKEN_OU expressao_sintatica
+        { $$ = descartar_operandos($1, $3); }
     | expressao_sintatica TOKEN_E expressao_sintatica
+        { $$ = descartar_operandos($1, $3); }
     | expressao_sintatica TOKEN_MAIS expressao_sintatica
+        { $$ = descartar_operandos($1, $3); }
     | expressao_sintatica TOKEN_MENOS expressao_sintatica
+        { $$ = descartar_operandos($1, $3); }
     | expressao_sintatica TOKEN_VEZES expressao_sintatica
+        { $$ = descartar_operandos($1, $3); }
     | expressao_sintatica TOKEN_DIV expressao_sintatica
+        { $$ = descartar_operandos($1, $3); }
     | expressao_sintatica TOKEN_MENOR expressao_sintatica
+        { $$ = descartar_operandos($1, $3); }
     | expressao_sintatica TOKEN_MAIOR expressao_sintatica
+        { $$ = descartar_operandos($1, $3); }
     | expressao_sintatica TOKEN_MENOR_IGUAL expressao_sintatica
+        { $$ = descartar_operandos($1, $3); }
     | expressao_sintatica TOKEN_MAIOR_IGUAL expressao_sintatica
+        { $$ = descartar_operandos($1, $3); }
     | expressao_sintatica TOKEN_IGUAL expressao_sintatica
+        { $$ = descartar_operandos($1, $3); }
     | expressao_sintatica TOKEN_DIFERENTE expressao_sintatica
+        { $$ = descartar_operandos($1, $3); }
     | TOKEN_NEGACAO expressao_sintatica
+        { $$ = descartar_operandos($2, NULL); }
     | TOKEN_MENOS expressao_sintatica %prec UMINUS
+        { $$ = descartar_operandos($2, NULL); }
     | TOKEN_ABRE_PAR expressao_sintatica TOKEN_FECHA_PAR
-    | ID { free($1); }
+        { $$ = $2; }
+    | ID
+        { free($1); $$ = NULL; }
     | NUMERO
+        { $$ = NULL; }
+    | TOKEN_STRING_LITERAL
+        {
+            $$ = criarNo(NO_LITERAL_STRING, yylineno);
+            $$->tipo_dado = TIPO_STRING;
+            $$->valor.valor_str = $1;
+        }
     | TOKEN_TRUE
+        { $$ = NULL; }
     | TOKEN_FALSE
+        { $$ = NULL; }
     | acesso_array
     | leitura_scanner
     | chamada_metodo
@@ -449,13 +495,15 @@ comando_print:
       TOKEN_SYSTEM TOKEN_PONTO TOKEN_OUT TOKEN_PONTO TOKEN_PRINTLN
       TOKEN_ABRE_PAR argumento_opcional TOKEN_FECHA_PAR TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_PRINTLN, 0);
-            adicionarFilho($$, $7);
+            $$ = criarNo(NO_PRINTLN, yylineno);
+            if ($7 != NULL) {
+                adicionarFilho($$, $7);
+            }
         }
     | TOKEN_SYSTEM TOKEN_PONTO TOKEN_OUT TOKEN_PONTO TOKEN_PRINT
       TOKEN_ABRE_PAR expressao TOKEN_FECHA_PAR TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_PRINT, 0);
+            $$ = criarNo(NO_PRINT, yylineno);
             adicionarFilho($$, $7);
         }
     ;
@@ -469,7 +517,7 @@ instanciacao:
       TOKEN_NEW TOKEN_SCANNER TOKEN_ABRE_PAR TOKEN_SYSTEM TOKEN_PONTO
       TOKEN_IN TOKEN_FECHA_PAR
         {
-            $$ = criarNo(NO_SCANNER, yylineno);
+            $$ = criarNo(NO_INSTANCIACAO_SCANNER, yylineno);
             $$->tipo_dado = TIPO_SCANNER;
         }
     | TOKEN_NEW tipo_base TOKEN_ABRE_COLCHETE expressao TOKEN_FECHA_COLCHETE
@@ -499,25 +547,34 @@ acesso_array:
 
 leitura_scanner:
       ID TOKEN_PONTO metodo_scanner TOKEN_ABRE_PAR TOKEN_FECHA_PAR
+        {
+            NoAST *variavel = criarNo(NO_IDENTIFICADOR, yylineno);
+            variavel->tipo_dado = TIPO_SCANNER;
+            variavel->valor.valor_str = $1;
+
+            $$ = criarNo(NO_LEITURA_SCANNER, yylineno);
+            $$->valor.valor_str = $3;
+            adicionarFilho($$, variavel);
+        }
     ;
 
 metodo_scanner:
-      TOKEN_NEXT
-    | TOKEN_NEXT_LINE
-    | TOKEN_NEXT_INT
-    | TOKEN_NEXT_DOUBLE
-    | TOKEN_NEXT_FLOAT
-    | TOKEN_NEXT_LONG
-    | TOKEN_NEXT_SHORT
-    | TOKEN_NEXT_BYTE
-    | TOKEN_NEXT_BOOLEAN
+      TOKEN_NEXT { $$ = strdup("next"); }
+    | TOKEN_NEXT_LINE { $$ = strdup("nextLine"); }
+    | TOKEN_NEXT_INT { $$ = strdup("nextInt"); }
+    | TOKEN_NEXT_DOUBLE { $$ = strdup("nextDouble"); }
+    | TOKEN_NEXT_FLOAT { $$ = strdup("nextFloat"); }
+    | TOKEN_NEXT_LONG { $$ = strdup("nextLong"); }
+    | TOKEN_NEXT_SHORT { $$ = strdup("nextShort"); }
+    | TOKEN_NEXT_BYTE { $$ = strdup("nextByte"); }
+    | TOKEN_NEXT_BOOLEAN { $$ = strdup("nextBoolean"); }
     ;
 
 chamada_metodo:
       ID TOKEN_ABRE_PAR argumentos_opcionais TOKEN_FECHA_PAR
-        { free($1); }
+        { free($1); $$ = NULL; }
     | ID TOKEN_PONTO ID TOKEN_ABRE_PAR argumentos_opcionais TOKEN_FECHA_PAR
-        { free($1); free($3); }
+        { free($1); free($3); $$ = NULL; }
     ;
 
 argumentos_opcionais:
