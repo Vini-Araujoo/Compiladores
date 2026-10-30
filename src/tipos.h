@@ -13,7 +13,8 @@ typedef enum {
     TIPO_BOOLEAN,
     TIPO_STRING,
     TIPO_ARRAY,
-    TIPO_SCANNER
+    TIPO_SCANNER,
+    TIPO_INDEFINIDO
 } TipoDado;
 
 typedef enum {
