@@ -22,6 +22,7 @@ typedef struct NoAST
     TipoDado tipo_dado; /* Tipo associado (ex: TIPO_INT, TIPO_VOID) */
     ValorLiteral valor; /* Valor do literal, nome do identificador ou operador */
     int linha;          /* Linha correspondente no código fonte Java */
+    int posfixo;        /* NO_OP_UNARIA: 1 = operador pos-fixado (x++), 0 = pre-fixado (++x, -x, !x) */
 
     struct NoAST **filhos; /* Vetor dinâmico de ponteiros para nós filhos */
     int num_filhos;        /* Quantidade atual de filhos */

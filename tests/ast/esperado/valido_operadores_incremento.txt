@@ -1,0 +1,31 @@
+NO_CLASSE (ValidoOperadoresIncremento)
+└── filho[0]: NO_METODO (executar)
+    ├── filho[0]: NO_PARAMETROS
+    └── filho[1]: NO_BLOCO
+        ├── filho[0]: NO_ATRIBUICAO
+        │   ├── filho[0]: NO_IDENTIFICADOR (y)
+        │   └── filho[1]: NO_OP_BINARIA (+)
+        │       ├── filho[0]: NO_OP_UNARIA (++)
+        │       │   └── filho[0]: NO_IDENTIFICADOR (a)
+        │       └── filho[1]: NO_OP_UNARIA (--, posfixo)
+        │           └── filho[0]: NO_IDENTIFICADOR (b)
+        ├── filho[1]: NO_ATRIBUICAO
+        │   ├── filho[0]: NO_IDENTIFICADOR (z)
+        │   └── filho[1]: NO_OP_BINARIA (*)
+        │       ├── filho[0]: NO_OP_UNARIA (++, posfixo)
+        │       │   └── filho[0]: NO_IDENTIFICADOR (i)
+        │       └── filho[1]: NO_LITERAL_INT (2)
+        ├── filho[2]: NO_ATRIBUICAO
+        │   ├── filho[0]: NO_IDENTIFICADOR (w)
+        │   └── filho[1]: NO_OP_UNARIA (-)
+        │       └── filho[0]: NO_OP_UNARIA (++, posfixo)
+        │           └── filho[0]: NO_IDENTIFICADOR (c)
+        └── filho[3]: NO_ATRIBUICAO
+            ├── filho[0]: NO_IDENTIFICADOR (t)
+            └── filho[1]: NO_OP_BINARIA (-)
+                ├── filho[0]: NO_OP_UNARIA (--)
+                │   └── filho[0]: NO_IDENTIFICADOR (d)
+                └── filho[1]: NO_OP_UNARIA (--, posfixo)
+                    └── filho[0]: NO_IDENTIFICADOR (e)
+
+Analise sintatica concluida com sucesso.

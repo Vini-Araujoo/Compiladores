@@ -187,5 +187,12 @@ executar_arvore_positiva "$TEST_DIR/valido_expressao_com_parenteses.java" \
     "$TEST_DIR/esperado/valido_expressao_com_parenteses.txt"
 executar_negativo "$TEST_DIR/invalido_operador_sem_operando.java" 3
 
+echo "=== Testes de operadores relacionais, logicos e unarios ==="
+executar_arvore_positiva "$TEST_DIR/valido_expressoes_logicas_complexas.java" \
+    "$TEST_DIR/esperado/valido_expressoes_logicas_complexas.txt"
+executar_arvore_positiva "$TEST_DIR/valido_operadores_incremento.java" \
+    "$TEST_DIR/esperado/valido_operadores_incremento.txt"
+executar_negativo "$TEST_DIR/invalido_operador_logico_duplicado.java" 3
+
 printf 'Resumo: %d passou, %d falhou.\n' "$passou" "$falhou"
 (( falhou == 0 ))

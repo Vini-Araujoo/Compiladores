@@ -15,6 +15,7 @@ NoAST *criarNo(TipoNoAST tipo, int linha) {
     no->tipo_no = tipo;
     no->tipo_dado = TIPO_VOID;
     no->linha = linha;
+    no->posfixo = 0;
     no->num_filhos = 0;
     no->capacidade = CAPACIDADE_INICIAL_FILHOS;
     memset(&no->valor, 0, sizeof(ValorLiteral));
@@ -137,7 +138,8 @@ static void imprimirASTRec(const NoAST *no, const char *prefixo,
         printf(" (%s)", no->valor.valor_int ? "true" : "false");
     } else if ((no->tipo_no == NO_OP_BINARIA || no->tipo_no == NO_OP_UNARIA) &&
                no->valor.operador[0]) {
-        printf(" (%s)", no->valor.operador);
+        printf(" (%s%s)", no->valor.operador,
+               (no->tipo_no == NO_OP_UNARIA && no->posfixo) ? ", posfixo" : "");
     }
     putchar('\n');
 
