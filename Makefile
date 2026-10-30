@@ -13,7 +13,14 @@ PARSER_GENERATED_C := $(BUILD_DIR)/parser.tab.c
 PARSER_GENERATED_H := $(BUILD_DIR)/parser.tab.h
 PARSER_BINARY := $(BUILD_DIR)/parser
 
-.PHONY: all parser test test-ast clean
+SEMANTIC_BINARY := $(BUILD_DIR)/semantic
+.PHONY: all parser semantic test test-ast test-semantic clean
+semantic: $(SEMANTIC_BINARY)
+test-semantic: semantic
+	@bash tests/semantic/run-tests.sh
+
+$(SEMANTIC_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast.c src/ast.h src/inferencia.c src/inferencia.h src/main_semantico.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -DANALISE_SEMANTICA $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast.c src/inferencia.c src/main_semantico.c -o $@
 
 all: parser
 

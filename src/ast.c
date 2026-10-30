@@ -71,6 +71,22 @@ static const char *nomeTipoNoAST(TipoNoAST tipo) {
     return nomes[tipo];
 }
 
+static int imprimir_tipos = 0;
+
+static const char *nomeTipoDado(TipoDado tipo) {
+    static const char *const nomes[] = {
+        "TIPO_VOID", "TIPO_BYTE", "TIPO_SHORT", "TIPO_INT", "TIPO_LONG",
+        "TIPO_FLOAT", "TIPO_DOUBLE", "TIPO_CHAR", "TIPO_BOOLEAN",
+        "TIPO_STRING", "TIPO_ARRAY", "TIPO_SCANNER", "TIPO_INDEFINIDO"
+    };
+    const size_t quantidade = sizeof(nomes) / sizeof(nomes[0]);
+
+    if ((unsigned int)tipo >= quantidade) {
+        return "TIPO_DESCONHECIDO";
+    }
+    return nomes[tipo];
+}
+
 static const char *rotuloFilho(const NoAST *pai, int indice) {
     if (pai->tipo_no == NO_FOR) {
         static const char *const segmentos[] = {
@@ -141,6 +157,9 @@ static void imprimirASTRec(const NoAST *no, const char *prefixo,
         printf(" (%s%s)", no->valor.operador,
                (no->tipo_no == NO_OP_UNARIA && no->posfixo) ? ", posfixo" : "");
     }
+    if (imprimir_tipos && no->tipo_dado != TIPO_VOID) {
+        printf(" : %s", nomeTipoDado(no->tipo_dado));
+    }
     putchar('\n');
 
     char proximo_prefixo[512];
@@ -170,6 +189,12 @@ static void imprimirASTRec(const NoAST *no, const char *prefixo,
 
 void imprimirAST(const NoAST *raiz) {
     imprimirASTRec(raiz, "", 1, NULL);
+}
+
+void imprimirASTComTipos(const NoAST *raiz) {
+    imprimir_tipos = 1;
+    imprimirAST(raiz);
+    imprimir_tipos = 0;
 }
 
 void liberarAST(NoAST *raiz) {

@@ -824,6 +824,7 @@ void yyerror(const char *mensagem) {
     fprintf(stderr, "Erro sintatico na linha %d: %s\n", yylineno, mensagem);
 }
 
+#ifndef ANALISE_SEMANTICA
 int main(void) {
     if (yyparse() == 0) {
         if (arvore) {
@@ -835,6 +836,7 @@ int main(void) {
     }
     return 1;
 }
+#endif
 /*
 
 abstract de fora

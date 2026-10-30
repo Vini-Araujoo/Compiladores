@@ -35,6 +35,9 @@ void adicionarFilho(NoAST *pai, NoAST *filho);
 
 void imprimirAST(const NoAST *raiz);
 
+/* Igual a imprimirAST, mas acrescenta " : TIPO_X" aos nos com tipo_dado definido. */
+void imprimirASTComTipos(const NoAST *raiz);
+
 void liberarAST(NoAST *raiz);
 
 #endif
