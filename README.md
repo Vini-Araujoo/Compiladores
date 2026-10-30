@@ -21,6 +21,7 @@ Atualmente, a gramática reconhece a estrutura de um programa com uma classe de 
     - [Entrada, Saída e Arrays](docs/grammar/io_arrays.md) (Issue 5)
   - [`docs/ast/controle_fluxo_ast.md`](docs/ast/controle_fluxo_ast.md): Representação dos laços na AST (Issue 7.2).
   - [`docs/ast/arrays_ast.md`](docs/ast/arrays_ast.md): Representação de instanciação e acesso a arrays na AST.
+  - [`docs/semantic/tabela_simbolos.md`](docs/semantic/tabela_simbolos.md): Tabela de Símbolos e Pilha de Escopos (Issue 8.1).
   - [Erros Conhecidos e Limitações](docs/erros-conhecidos.md): Comportamentos e casos de borda mapeados.
 - `tests/`: Casos de teste organizados por fase e por issue:
   - `tests/parser/`: Casos de teste sintáticos (`issue_1` a `issue_5`) e suíte automatizada (`run-tests.sh`).
