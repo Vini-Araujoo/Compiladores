@@ -52,7 +52,7 @@ void adicionarFilho(NoAST *pai, NoAST *filho) {
 static const char *nomeTipoNoAST(TipoNoAST tipo) {
     static const char *const nomes[] = {
         "NO_PROGRAMA", "NO_CLASSE", "NO_METODO", "NO_PARAMETROS", "NO_PARAMETRO",
-        "NO_VAR_DECL", "NO_BLOCO", "NO_IF", "NO_ELSE", "NO_WHILE",
+        "NO_DECL_VARIAVEL", "NO_BLOCO", "NO_IF", "NO_ELSE", "NO_WHILE",
         "NO_FOR", "NO_DO_WHILE", "NO_SWITCH", "NO_CASES", "NO_CASE",
         "NO_DEFAULT", "NO_RETURN", "NO_BREAK", "NO_INCREMENTO",
         "NO_DECREMENTO", "NO_INCREMENTO_ANTES", "NO_DECREMENTO_ANTES",
@@ -123,9 +123,13 @@ static void imprimirASTRec(const NoAST *no, const char *prefixo,
 
     printf("%s", nomeTipoNoAST(no->tipo_no));
     if ((no->tipo_no == NO_CLASSE || no->tipo_no == NO_IDENTIFICADOR ||
-         no->tipo_no == NO_METODO || no->tipo_no == NO_PARAMETRO) &&
+         no->tipo_no == NO_METODO || no->tipo_no == NO_PARAMETRO ||
+         no->tipo_no == NO_DECL_VARIAVEL) &&
         no->valor.valor_str) {
         printf(" (%s)", no->valor.valor_str);
+    } else if (no->tipo_no == NO_ATRIBUICAO && no->valor.operador[0] &&
+               strcmp(no->valor.operador, "=") != 0) {
+        printf(" (%s)", no->valor.operador);
     } else if (no->tipo_no == NO_LITERAL_INT) {
         printf(" (%ld)", no->valor.valor_int);
     } else if (no->tipo_no == NO_LITERAL_FLOAT || no->tipo_no == NO_LITERAL_DOUBLE) {
@@ -190,6 +194,7 @@ void liberarAST(NoAST *raiz) {
         raiz->tipo_no == NO_IDENTIFICADOR ||
         raiz->tipo_no == NO_METODO ||
         raiz->tipo_no == NO_PARAMETRO ||
+        raiz->tipo_no == NO_DECL_VARIAVEL ||
         raiz->tipo_no == NO_LITERAL_STRING) {
         free(raiz->valor.valor_str);
     }
