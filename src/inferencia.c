@@ -4,22 +4,17 @@
 #include "ast.h"
 #include "tipos.h"
 
-/*
- * Stub da Issue 8.1: ate a tabela de simbolos (buscarSimbolo) estar integrada,
- * o tipo de um identificador vem deste mock.
- */
+
 #ifndef TABELA_INTEGRADA
 TipoDado buscarTipoSimboloMock(char *nome) {
     if (nome && strcmp(nome, "flag") == 0) return TIPO_BOOLEAN;
     if (nome && strcmp(nome, "taxa") == 0) return TIPO_DOUBLE;
-    return TIPO_INT; // Variáveis padrão são int no stub
+    return TIPO_INT; 
 }
 #endif
 
 static TipoDado tipoDoIdentificador(char *nome) {
-    if (!nome) {
-        return TIPO_INDEFINIDO;
-    }
+    if (!nome) return TIPO_INDEFINIDO;
     return buscarTipoSimboloMock(nome);
 }
 
@@ -29,23 +24,11 @@ static int ehNumerico(TipoDado tipo) {
            tipo == TIPO_DOUBLE;
 }
 
-/*
- * Promocao numerica binaria do Java: se algum operando for double, o resultado
- * e double; senao float, senao long; senao, no minimo int.
- */
 static TipoDado promocaoNumerica(TipoDado esquerda, TipoDado direita) {
-    if (!ehNumerico(esquerda) || !ehNumerico(direita)) {
-        return TIPO_INDEFINIDO;
-    }
-    if (esquerda == TIPO_DOUBLE || direita == TIPO_DOUBLE) {
-        return TIPO_DOUBLE;
-    }
-    if (esquerda == TIPO_FLOAT || direita == TIPO_FLOAT) {
-        return TIPO_FLOAT;
-    }
-    if (esquerda == TIPO_LONG || direita == TIPO_LONG) {
-        return TIPO_LONG;
-    }
+    if (!ehNumerico(esquerda) || !ehNumerico(direita)) return TIPO_INDEFINIDO;
+    if (esquerda == TIPO_DOUBLE || direita == TIPO_DOUBLE) return TIPO_DOUBLE;
+    if (esquerda == TIPO_FLOAT || direita == TIPO_FLOAT) return TIPO_FLOAT;
+    if (esquerda == TIPO_LONG || direita == TIPO_LONG) return TIPO_LONG;
     return TIPO_INT;
 }
 
@@ -54,12 +37,32 @@ static TipoDado inferirOperacaoBinaria(NoAST *no) {
     TipoDado direita = inferirTipoExpressao(no->filhos[1]);
     const char *op = no->valor.operador;
 
-    if (strcmp(op, "==") == 0 || strcmp(op, "!=") == 0 ||
-        strcmp(op, "<") == 0 || strcmp(op, ">") == 0 ||
-        strcmp(op, "<=") == 0 || strcmp(op, ">=") == 0 ||
-        strcmp(op, "&&") == 0 || strcmp(op, "||") == 0) {
+    if (strcmp(op, "&&") == 0 || strcmp(op, "||") == 0) {
+        if (esquerda != TIPO_BOOLEAN || direita != TIPO_BOOLEAN) {
+            fprintf(stderr, "Erro semantico na linha %d: Operador logico '%s' aplicado a tipos incompativeis.\n", no->linha, op);
+            return TIPO_INDEFINIDO;
+        }
         return TIPO_BOOLEAN;
     }
+    
+    if (strcmp(op, "<") == 0 || strcmp(op, ">") == 0 || 
+        strcmp(op, "<=") == 0 || strcmp(op, ">=") == 0) {
+        if (!ehNumerico(esquerda) || !ehNumerico(direita)) {
+            fprintf(stderr, "Erro semantico na linha %d: Operador relacional '%s' aplicado a tipos incompativeis (esperava numericos).\n", no->linha, op);
+            return TIPO_INDEFINIDO;
+        }
+        return TIPO_BOOLEAN;
+    }
+
+    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0 || 
+        strcmp(op, "*") == 0 || strcmp(op, "/") == 0 || strcmp(op, "%") == 0) {
+        if (!ehNumerico(esquerda) || !ehNumerico(direita)) {
+             fprintf(stderr, "Erro semantico na linha %d: Operador aritmetico '%s' aplicado a tipos incompativeis.\n", no->linha, op);
+             return TIPO_INDEFINIDO;
+        }
+        return promocaoNumerica(esquerda, direita);
+    }
+
     return promocaoNumerica(esquerda, direita);
 }
 
@@ -67,95 +70,58 @@ static TipoDado inferirOperacaoUnaria(NoAST *no) {
     TipoDado operando = inferirTipoExpressao(no->filhos[0]);
     const char *op = no->valor.operador;
 
-    if (strcmp(op, "!") == 0) {
-        return TIPO_BOOLEAN;
+    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0 || 
+        strcmp(op, "++") == 0 || strcmp(op, "--") == 0) {
+        if (!ehNumerico(operando)) {
+             fprintf(stderr, "Erro semantico na linha %d: Operador aritmetico unario '%s' aplicado a tipo nao-numerico.\n", no->linha, op);
+             return TIPO_INDEFINIDO;
+        }
+        if (operando == TIPO_BYTE || operando == TIPO_SHORT || operando == TIPO_CHAR) {
+            return TIPO_INT;
+        }
+        return operando;
     }
-    if (strcmp(op, "-") == 0) {
-        return promocaoNumerica(operando, TIPO_INT);
-    }
-    return ehNumerico(operando) ? operando : TIPO_INDEFINIDO;
+
+    return operando;
 }
 
 TipoDado inferirTipoExpressao(NoAST *expr) {
-    TipoDado tipo;
+    if (!expr) return TIPO_INDEFINIDO;
 
-    if (!expr) {
-        return TIPO_INDEFINIDO;
-    }
+    TipoDado tipo = TIPO_INDEFINIDO;
 
     switch (expr->tipo_no) {
-    case NO_LITERAL_INT:
-        tipo = TIPO_INT;
-        break;
-    case NO_LITERAL_DOUBLE:
-        tipo = TIPO_DOUBLE;
-        break;
-    case NO_LITERAL_BOOL:
-        tipo = TIPO_BOOLEAN;
-        break;
-    case NO_IDENTIFICADOR:
-        tipo = tipoDoIdentificador(expr->valor.valor_str);
-        break;
-    case NO_OP_BINARIA:
-        if (expr->num_filhos < 2) {
-            return TIPO_INDEFINIDO;
-        }
-        tipo = inferirOperacaoBinaria(expr);
-        break;
-    case NO_OP_UNARIA:
-        if (expr->num_filhos < 1) {
-            return TIPO_INDEFINIDO;
-        }
-        tipo = inferirOperacaoUnaria(expr);
-        break;
-    default:
-        return TIPO_INDEFINIDO;
+        case NO_LITERAL_INT: tipo = TIPO_INT; break;
+        case NO_LITERAL_DOUBLE: tipo = TIPO_DOUBLE; break;
+        case NO_LITERAL_BOOL: tipo = TIPO_BOOLEAN; break;
+        case NO_IDENTIFICADOR: tipo = tipoDoIdentificador(expr->valor.valor_str); break;
+        case NO_OP_BINARIA: tipo = inferirOperacaoBinaria(expr); break;
+        case NO_OP_UNARIA: tipo = inferirOperacaoUnaria(expr); break;
+        default:
+            for (int i = 0; i < expr->num_filhos; i++) {
+                 inferirTipoExpressao(expr->filhos[i]);
+            }
+            break;
     }
 
-    expr->tipo_dado = tipo;
+    if (expr->tipo_no == NO_LITERAL_INT || expr->tipo_no == NO_LITERAL_DOUBLE || 
+        expr->tipo_no == NO_LITERAL_BOOL || expr->tipo_no == NO_IDENTIFICADOR ||
+        expr->tipo_no == NO_OP_BINARIA || expr->tipo_no == NO_OP_UNARIA) {
+        expr->tipo_dado = tipo;
+    }
     return tipo;
 }
 
-static int ehNoExpressao(const NoAST *no) {
-    switch (no->tipo_no) {
-    case NO_OP_BINARIA:
-    case NO_OP_UNARIA:
-    case NO_IDENTIFICADOR:
-    case NO_LITERAL_INT:
-    case NO_LITERAL_FLOAT:
-    case NO_LITERAL_DOUBLE:
-    case NO_LITERAL_CHAR:
-    case NO_LITERAL_STRING:
-    case NO_LITERAL_BOOL:
-    case NO_CHAMADA_METODO:
-    case NO_NOVA_INSTANCIA:
-    case NO_INSTANCIACAO_ARRAY:
-    case NO_ACESSO_ARRAY:
-    case NO_SCANNER:
-    case NO_EXPRESSAO:
-        return 1;
-    default:
-        return 0;
-    }
-}
-
 int analisarTiposAST(NoAST *raiz) {
+    if (!raiz) return 0;
+    
     int erros = 0;
-
-    if (!raiz) {
-        return 0;
-    }
-
-    if (ehNoExpressao(raiz)) {
-        if (inferirTipoExpressao(raiz) == TIPO_INDEFINIDO) {
-            fprintf(stderr,
-                    "Erro semantico na linha %d: tipo da expressao nao pode ser determinado\n",
-                    raiz->linha);
-            erros++;
+    if (raiz->tipo_no == NO_OP_BINARIA || raiz->tipo_no == NO_OP_UNARIA || raiz->tipo_no == NO_IDENTIFICADOR) {
+        if (raiz->tipo_dado == TIPO_INDEFINIDO) {
+            erros++; 
         }
-        return erros;
     }
-
+    
     for (int i = 0; i < raiz->num_filhos; i++) {
         erros += analisarTiposAST(raiz->filhos[i]);
     }

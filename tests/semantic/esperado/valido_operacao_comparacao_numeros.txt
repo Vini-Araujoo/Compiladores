@@ -1,0 +1,22 @@
+NO_PROGRAMA
+└── NO_CLASSE (TestePositivo)
+    └── NO_METODO (main)
+        ├── NO_PARAMETROS
+        │   └── NO_PARAMETRO (args)
+        └── NO_BLOCO
+            ├── NO_VAR_DECL
+            │   ├── NO_IDENTIFICADOR (a) : TIPO_INT
+            │   └── NO_LITERAL_INT (10) : TIPO_INT
+            ├── NO_VAR_DECL
+            │   ├── NO_IDENTIFICADOR (b) : TIPO_INT
+            │   └── NO_LITERAL_DOUBLE (5.5) : TIPO_DOUBLE
+            ├── NO_VAR_DECL
+            │   ├── NO_IDENTIFICADOR (c) : TIPO_INT
+            │   └── NO_OP_BINARIA (>) : TIPO_BOOLEAN
+            │       ├── NO_IDENTIFICADOR (a) : TIPO_INT
+            │       └── NO_IDENTIFICADOR (b) : TIPO_INT
+            └── NO_VAR_DECL
+                ├── NO_IDENTIFICADOR (d) : TIPO_INT
+                └── NO_OP_BINARIA (||) : TIPO_BOOLEAN
+                    ├── NO_LITERAL_BOOL (true) : TIPO_BOOLEAN
+                    └── NO_LITERAL_BOOL (false) : TIPO_BOOLEAN

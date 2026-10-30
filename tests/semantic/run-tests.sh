@@ -58,5 +58,12 @@ executar_arvore_positiva "$TEST_DIR/valido_inferencia_mista_int_double.java" \
     "$TEST_DIR/esperado/valido_inferencia_mista_int_double.txt"
 executar_negativo "$TEST_DIR/invalido_tipo_indeterminado.java" 3
 
+echo "=== Testes de validacao de operadores (Issue 9.4) ==="
+executar_arvore_positiva "$TEST_DIR/valido_operacao_comparacao_numeros.java" \
+    "$TEST_DIR/esperado/valido_operacao_comparacao_numeros.txt"
+
+executar_negativo "$TEST_DIR/invalido_soma_booleana.java" 3
+executar_negativo "$TEST_DIR/invalido_e_logico_com_inteiros.java" 3
+
 printf 'Resumo: %d passou, %d falhou.\n' "$passou" "$falhou"
 (( falhou == 0 ))

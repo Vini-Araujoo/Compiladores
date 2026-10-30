@@ -1,0 +1,21 @@
+NO_PROGRAMA
+└── filho[0]: NO_CLASSE (ValidoInferenciaMista)
+    └── filho[0]: NO_METODO (main)
+        ├── filho[0]: NO_PARAMETROS
+        └── filho[1]: NO_BLOCO
+            ├── filho[0]: NO_VAR_DECL
+            │   └── filho[0]: NO_IDENTIFICADOR (taxa) : TIPO_DOUBLE
+            ├── filho[1]: NO_ATRIBUICAO
+            │   ├── filho[0]: NO_IDENTIFICADOR (taxa) : TIPO_DOUBLE
+            │   └── filho[1]: NO_OP_BINARIA (+) : TIPO_DOUBLE
+            │       ├── filho[0]: NO_LITERAL_INT (5) : TIPO_INT
+            │       └── filho[1]: NO_LITERAL_DOUBLE (3.14) : TIPO_DOUBLE
+            ├── filho[2]: NO_VAR_DECL
+            │   └── filho[0]: NO_IDENTIFICADOR (flag) : TIPO_BOOLEAN
+            └── filho[3]: NO_ATRIBUICAO
+                ├── filho[0]: NO_IDENTIFICADOR (flag) : TIPO_BOOLEAN
+                └── filho[1]: NO_OP_BINARIA (>) : TIPO_BOOLEAN
+                    ├── filho[0]: NO_IDENTIFICADOR (taxa) : TIPO_DOUBLE
+                    └── filho[1]: NO_LITERAL_DOUBLE (10) : TIPO_DOUBLE
+
+Analise semantica de tipos concluida com sucesso.
