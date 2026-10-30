@@ -56,7 +56,8 @@ static const char *nomeTipoNoAST(TipoNoAST tipo) {
         "NO_FOR", "NO_DO_WHILE", "NO_SWITCH", "NO_CASES", "NO_CASE",
         "NO_DEFAULT", "NO_RETURN", "NO_BREAK", "NO_INCREMENTO",
         "NO_DECREMENTO", "NO_INCREMENTO_ANTES", "NO_DECREMENTO_ANTES",
-        "NO_ATRIBUICAO", "NO_PRINT", "NO_PRINTLN", "NO_SCANNER",
+        "NO_ATRIBUICAO", "NO_PRINT", "NO_PRINTLN", "NO_INSTANCIACAO_SCANNER",
+        "NO_LEITURA_SCANNER",
         "NO_OP_BINARIA", "NO_OP_UNARIA", "NO_CHAMADA_METODO",
         "NO_NOVA_INSTANCIA", "NO_INSTANCIACAO_ARRAY", "NO_ACESSO_ARRAY", "NO_CONDICAO",
         "NO_EXPRESSAO", "NO_THEN", "NO_IDENTIFICADOR", "NO_LITERAL_INT",
@@ -103,6 +104,14 @@ static const char *rotuloFilho(const NoAST *pai, int indice) {
     {
         return indice == 0 ? "array" : "indice";
     }
+    if (pai->tipo_no == NO_PRINT || pai->tipo_no == NO_PRINTLN)
+    {
+        return "argumento";
+    }
+    if (pai->tipo_no == NO_LEITURA_SCANNER)
+    {
+        return "variavel";
+    }
     
     
     return NULL;
@@ -123,7 +132,8 @@ static void imprimirASTRec(const NoAST *no, const char *prefixo,
 
     printf("%s", nomeTipoNoAST(no->tipo_no));
     if ((no->tipo_no == NO_CLASSE || no->tipo_no == NO_IDENTIFICADOR ||
-         no->tipo_no == NO_METODO || no->tipo_no == NO_PARAMETRO) &&
+         no->tipo_no == NO_METODO || no->tipo_no == NO_PARAMETRO ||
+         no->tipo_no == NO_LEITURA_SCANNER) &&
         no->valor.valor_str) {
         printf(" (%s)", no->valor.valor_str);
     } else if (no->tipo_no == NO_LITERAL_INT) {
@@ -190,6 +200,7 @@ void liberarAST(NoAST *raiz) {
         raiz->tipo_no == NO_IDENTIFICADOR ||
         raiz->tipo_no == NO_METODO ||
         raiz->tipo_no == NO_PARAMETRO ||
+        raiz->tipo_no == NO_LEITURA_SCANNER ||
         raiz->tipo_no == NO_LITERAL_STRING) {
         free(raiz->valor.valor_str);
     }
