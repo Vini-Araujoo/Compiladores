@@ -175,6 +175,11 @@ executar_switch_positivo "$TEST_DIR/valido_switch_sem_default.java" \
     "default: <vazio>" "default: NO_DEFAULT" 1
 executar_negativo "$TEST_DIR/invalido_switch_sem_chaves.java" 4
 
+echo "=== Testes de arrays ==="
+executar_positivo "$TEST_DIR/valido_alocacao_array.java"
+executar_positivo "$TEST_DIR/valido_atribuicao_em_indice_array.java"
+executar_negativo "$TEST_DIR/invalido_array_sem_tamanho.java" 3
+
 echo "=== Testes de expressoes aritmeticas ==="
 executar_arvore_positiva "$TEST_DIR/valido_precedencia_aritmetica.java" \
     "$TEST_DIR/esperado/valido_precedencia_aritmetica.txt"
