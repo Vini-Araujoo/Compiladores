@@ -194,5 +194,12 @@ executar_arvore_positiva "$TEST_DIR/valido_operadores_incremento.java" \
     "$TEST_DIR/esperado/valido_operadores_incremento.txt"
 executar_negativo "$TEST_DIR/invalido_operador_logico_duplicado.java" 3
 
+echo "=== Testes de declaracoes de variaveis e atribuicoes ==="
+executar_arvore_positiva "$TEST_DIR/valido_declaracao_multipla.java" \
+    "$TEST_DIR/esperado/valido_declaracao_multipla.txt"
+executar_arvore_positiva "$TEST_DIR/valido_atribuicao_simples.java" \
+    "$TEST_DIR/esperado/valido_atribuicao_simples.txt"
+executar_negativo "$TEST_DIR/invalido_declaracao_sem_tipo.java" 3
+
 printf 'Resumo: %d passou, %d falhou.\n' "$passou" "$falhou"
-(( falhou == 0 ))
+(( falhou == 0 ))
