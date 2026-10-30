@@ -154,8 +154,10 @@ static NoAST *cria_no_instancia_id(TipoNoAST tipo, TipoDado dadoRetorno, char *i
 %type <no> expressao comando_return comando_switch casos_switch case_switch
 %type <no> default_switch declaracao_metodo comando_print argumento_opcional
 %type <no> acesso_array
+%type <no> instanciacao
 %type <no> atribuicao_for condicao_for incremento_for
 %type <no> comando_for comando_do_while comando_while
+%type <tipo_dado> tipo_base
 %type <tipo_dado> tipo
 %type <no> lista_parametros parametros_com_virgula parametro
 %%
@@ -466,20 +468,29 @@ argumento_opcional:
 instanciacao:
       TOKEN_NEW TOKEN_SCANNER TOKEN_ABRE_PAR TOKEN_SYSTEM TOKEN_PONTO
       TOKEN_IN TOKEN_FECHA_PAR
+        {
+            $$ = criarNo(NO_SCANNER, yylineno);
+            $$->tipo_dado = TIPO_SCANNER;
+        }
     | TOKEN_NEW tipo_base TOKEN_ABRE_COLCHETE expressao TOKEN_FECHA_COLCHETE
+        {
+            $$ = criarNo(NO_INSTANCIACAO_ARRAY, yylineno);
+            $$->tipo_dado = $2;
+            adicionarFilho($$, $4);
+        }
     ;
 
 tipo_base:
-      TOKEN_INT
-    | TOKEN_DOUBLE
-    | TOKEN_STRING_TIPO
+      TOKEN_INT         { $$ = TIPO_INT; }
+    | TOKEN_DOUBLE      { $$ = TIPO_DOUBLE; }
+    | TOKEN_STRING_TIPO { $$ = TIPO_STRING; }
     ;
 
 acesso_array:
       ID TOKEN_ABRE_COLCHETE expressao TOKEN_FECHA_COLCHETE
         {
-            $$ = criarNo(NO_ACESSO_ARRAY, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            $$ = criarNo(NO_ACESSO_ARRAY, yylineno);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
             id->valor.valor_str = $1;
             adicionarFilho($$, id);
             adicionarFilho($$, $3);
