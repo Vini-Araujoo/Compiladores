@@ -15,6 +15,7 @@ NoAST *criarNo(TipoNoAST tipo, int linha) {
     no->tipo_no = tipo;
     no->tipo_dado = TIPO_VOID;
     no->linha = linha;
+    no->posfixo = 0;
     no->num_filhos = 0;
     no->capacidade = CAPACIDADE_INICIAL_FILHOS;
     memset(&no->valor, 0, sizeof(ValorLiteral));
@@ -57,7 +58,7 @@ static const char *nomeTipoNoAST(TipoNoAST tipo) {
         "NO_DECREMENTO", "NO_INCREMENTO_ANTES", "NO_DECREMENTO_ANTES",
         "NO_ATRIBUICAO", "NO_PRINT", "NO_PRINTLN", "NO_SCANNER",
         "NO_OP_BINARIA", "NO_OP_UNARIA", "NO_CHAMADA_METODO",
-        "NO_NOVA_INSTANCIA", "NO_ACESSO_ARRAY", "NO_CONDICAO",
+        "NO_NOVA_INSTANCIA", "NO_INSTANCIACAO_ARRAY", "NO_ACESSO_ARRAY", "NO_CONDICAO",
         "NO_EXPRESSAO", "NO_THEN", "NO_IDENTIFICADOR", "NO_LITERAL_INT",
         "NO_LITERAL_FLOAT", "NO_LITERAL_DOUBLE", "NO_LITERAL_CHAR",
         "NO_LITERAL_STRING", "NO_LITERAL_BOOL"
@@ -94,6 +95,16 @@ static const char *rotuloFilho(const NoAST *pai, int indice) {
     if (pai->tipo_no == NO_DEFAULT) {
         return "comandos";
     }
+    if (pai->tipo_no == NO_INSTANCIACAO_ARRAY)
+    {
+        return "tamanho";
+    }
+    if (pai->tipo_no == NO_ACESSO_ARRAY)
+    {
+        return indice == 0 ? "array" : "indice";
+    }
+    
+    
     return NULL;
 }
 
@@ -117,6 +128,18 @@ static void imprimirASTRec(const NoAST *no, const char *prefixo,
         printf(" (%s)", no->valor.valor_str);
     } else if (no->tipo_no == NO_LITERAL_INT) {
         printf(" (%ld)", no->valor.valor_int);
+    } else if (no->tipo_no == NO_LITERAL_FLOAT || no->tipo_no == NO_LITERAL_DOUBLE) {
+        printf(" (%g)", no->valor.valor_double);
+    } else if (no->tipo_no == NO_LITERAL_STRING && no->valor.valor_str) {
+        printf(" (\"%s\")", no->valor.valor_str);
+    } else if (no->tipo_no == NO_LITERAL_CHAR) {
+        printf(" ('%c')", (char)no->valor.valor_int);
+    } else if (no->tipo_no == NO_LITERAL_BOOL) {
+        printf(" (%s)", no->valor.valor_int ? "true" : "false");
+    } else if ((no->tipo_no == NO_OP_BINARIA || no->tipo_no == NO_OP_UNARIA) &&
+               no->valor.operador[0]) {
+        printf(" (%s%s)", no->valor.operador,
+               (no->tipo_no == NO_OP_UNARIA && no->posfixo) ? ", posfixo" : "");
     }
     putchar('\n');
 
@@ -166,7 +189,8 @@ void liberarAST(NoAST *raiz) {
     if (raiz->tipo_no == NO_CLASSE ||
         raiz->tipo_no == NO_IDENTIFICADOR ||
         raiz->tipo_no == NO_METODO ||
-        raiz->tipo_no == NO_PARAMETRO) {
+        raiz->tipo_no == NO_PARAMETRO ||
+        raiz->tipo_no == NO_LITERAL_STRING) {
         free(raiz->valor.valor_str);
     }
     free(raiz);

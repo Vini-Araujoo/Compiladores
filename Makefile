@@ -25,8 +25,12 @@ test: parser
 test-ast: parser | $(BUILD_DIR)
 	@$(CC) $(CFLAGS) -Isrc src/ast.c tests/ast/teste_criacao_nos.c -o $(BUILD_DIR)/teste_criacao_nos
 	@$(CC) $(CFLAGS) -Isrc src/ast.c tests/ast/teste_adicionar_filho_nulo.c -o $(BUILD_DIR)/teste_adicionar_filho_nulo
+	@$(CC) $(CFLAGS) -Isrc src/ast.c tests/ast/teste_saida_impressao.c -o $(BUILD_DIR)/teste_saida_impressao
+	@$(CC) $(CFLAGS) -Isrc src/ast.c tests/ast/teste_impressao_arvore_vazia.c -o $(BUILD_DIR)/teste_impressao_arvore_vazia
 	@$(BUILD_DIR)/teste_criacao_nos
 	@$(BUILD_DIR)/teste_adicionar_filho_nulo
+	@$(BUILD_DIR)/teste_saida_impressao
+	@$(BUILD_DIR)/teste_impressao_arvore_vazia
 	@bash tests/ast/run-tests.sh
 	@echo "Todos os testes unitários da AST passaram com sucesso!"
 
