@@ -24,4 +24,11 @@ TipoDado inferirTipoExpressao(const NoAST *expressao);
 int validarAcessoArray(const char *nome, const NoAST *indice, int linha);
 int validarChamadaMetodo(const char *nome, const NoAST *argumentos, int linha);
 
+/* Passagem semântica para verificação e resolução de escopos (Issue 8.3) */
+int verificarEscopos(NoAST *raiz);
+
+/* Compatibilidade de tipos e coerção por alargamento (widening) do Java (Issue 8.5) */
+int tiposCompativeis(TipoDado destino, TipoDado origem);
+const char *nomeTipoDado(TipoDado tipo);
+
 #endif
