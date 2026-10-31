@@ -2,6 +2,7 @@
 #define AST_H
 
 #include "tipos.h"
+#include "tabela.h"
 
 /*enquanto que na struct guardamos todas de uma vez(tipo produto)
 no union guardamos apenas um deles (tipo soma)
@@ -16,8 +17,6 @@ typedef union
     char operador[4];
 } ValorLiteral;
 
-struct Simbolo;
-
 typedef struct NoAST
 {
     TipoNoAST tipo_no;  /* Categoria sintática do nó (ex: NO_IF, NO_METODO) */
@@ -25,6 +24,7 @@ typedef struct NoAST
     ValorLiteral valor; /* Valor do literal, nome do identificador ou operador */
     int linha;          /* Linha correspondente no código fonte Java */
     int posfixo;        /* NO_OP_UNARIA: 1 = operador pos-fixado (x++), 0 = pre-fixado (++x, -x, !x) */
+    Modificadores mods; /* Modificadores (final, public, static, etc.) */
     struct Simbolo *simbolo; /* Ponteiro para a entrada do símbolo na tabela de símbolos */
 
     struct NoAST **filhos; /* Vetor dinâmico de ponteiros para nós filhos */
