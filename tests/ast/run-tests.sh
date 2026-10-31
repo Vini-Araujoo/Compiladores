@@ -128,13 +128,36 @@ executar_arvore_positiva() {
     status=$?
 
     if [[ $status -eq 0 && "$saida" == "$(cat "$esperado")" ]]; then
-        printf '  [PASS] %s aceito e arvore identica a %s\n' \
-            "$(basename "$arquivo")" "$(basename "$esperado")"
+        printf '  [PASS] %s aceito e arvore identica a %s\n'             "$(basename "$arquivo")" "$(basename "$esperado")"
         ((passou += 1))
     else
-        printf '  [FAIL] %s deveria produzir a arvore de %s (status %d)\n' \
-            "$(basename "$arquivo")" "$(basename "$esperado")" "$status"
+        printf '  [FAIL] %s deveria produzir a arvore de %s (status %d)\n'             "$(basename "$arquivo")" "$(basename "$esperado")" "$status"
         diff <(printf '%s\n' "$saida") "$esperado" | head -20 | sed 's/^/         /'
+        ((falhou += 1))
+    fi
+}
+
+executar_io_positivo() {
+    local arquivo="$1"
+    shift
+    local saida status marcador ausente=""
+
+    saida="$("$PARSER" < "$arquivo" 2>&1)"
+    status=$?
+
+    for marcador in "$@"; do
+        if ! grep -Eq -e "$marcador" <<< "$saida"; then
+            ausente="$marcador"
+            break
+        fi
+    done
+
+    if [[ $status -eq 0 && -z "$ausente"         && "$saida" == *"Analise sintatica concluida com sucesso."* ]]; then
+        printf '  [PASS] %s aceito e AST de I/O verificada\n' "$(basename "$arquivo")"
+        ((passou += 1))
+    else
+        printf '  [FAIL] %s deveria produzir a AST de I/O esperada (status %d, ausente: %s)\n'             "$(basename "$arquivo")" "$status" "${ausente:-nenhum}"
+        printf '         Saida: %s\n' "${saida:-<sem saida>}"
         ((falhou += 1))
     fi
 }
@@ -187,6 +210,19 @@ executar_arvore_positiva "$TEST_DIR/valido_expressao_com_parenteses.java" \
     "$TEST_DIR/esperado/valido_expressao_com_parenteses.txt"
 executar_negativo "$TEST_DIR/invalido_operador_sem_operando.java" 3
 
+echo "=== Testes de I/O (print e Scanner) ==="
+executar_io_positivo "$TEST_DIR/valido_io_print_expressao.java" \
+    'NO_PRINTLN$' 'NO_PRINT$' \
+    'NO_LITERAL_STRING \("Ola, mundo"\)'
+executar_io_positivo "$TEST_DIR/valido_io_leitura_scanner.java" \
+    'NO_INSTANCIACAO_SCANNER' 'variavel: NO_IDENTIFICADOR \(leitor\)' \
+    'NO_LEITURA_SCANNER \(next\)' 'NO_LEITURA_SCANNER \(nextLine\)' \
+    'NO_LEITURA_SCANNER \(nextInt\)' 'NO_LEITURA_SCANNER \(nextDouble\)' \
+    'NO_LEITURA_SCANNER \(nextFloat\)' 'NO_LEITURA_SCANNER \(nextLong\)' \
+    'NO_LEITURA_SCANNER \(nextShort\)' 'NO_LEITURA_SCANNER \(nextByte\)' \
+    'NO_LEITURA_SCANNER \(nextBoolean\)'
+executar_negativo "$TEST_DIR/invalido_print_sem_parenteses.java" 3
+
 echo "=== Testes de operadores relacionais, logicos e unarios ==="
 executar_arvore_positiva "$TEST_DIR/valido_expressoes_logicas_complexas.java" \
     "$TEST_DIR/esperado/valido_expressoes_logicas_complexas.txt"
@@ -202,4 +238,4 @@ executar_arvore_positiva "$TEST_DIR/valido_atribuicao_simples.java" \
 executar_negativo "$TEST_DIR/invalido_declaracao_sem_tipo.java" 3
 
 printf 'Resumo: %d passou, %d falhou.\n' "$passou" "$falhou"
-(( falhou == 0 ))
+(( falhou == 0 ))
