@@ -192,5 +192,53 @@ if [[ -x "$BIN_PARSER" ]]; then
 fi
 
 echo
+echo "=== Executando testes de Compatibilidade de Tipos em Atribuicoes (Issue 8.5) ==="
+
+# 10. Teste positivo de conversao widening: valido_coercao_int_para_double.java
+if [[ -x "$BIN_PARSER" ]]; then
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/valido_coercao_int_para_double.java")"
+    status=$?
+    if [[ $status -eq 0 ]]; then
+        printf '  [PASS] valido_coercao_int_para_double.java aprovado com status %d\n' "$status"
+        ((passou += 1))
+    else
+        printf '  [FAIL] valido_coercao_int_para_double.java falhou (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+else
+    echo "Erro: binario parser nao encontrado em $BUILD_DIR." >&2
+    exit 2
+fi
+
+# 11. Teste negativo de narrowing sem cast: invalido_atribuicao_double_para_int.java
+if [[ -x "$BIN_PARSER" ]]; then
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/invalido_atribuicao_double_para_int.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 5"* && "$saida" == *"tipos incompativeis na atribuicao para 'a'"* ]]; then
+        printf '  [PASS] invalido_atribuicao_double_para_int.java rejeitado corretamente na linha 5 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_atribuicao_double_para_int.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+fi
+
+# 12. Teste negativo de tipos incompativeis: invalido_atribuicao_string_para_boolean.java
+if [[ -x "$BIN_PARSER" ]]; then
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/invalido_atribuicao_string_para_boolean.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 4"* && "$saida" == *"tipos incompativeis na atribuicao para 'flag'"* ]]; then
+        printf '  [PASS] invalido_atribuicao_string_para_boolean.java rejeitado corretamente na linha 4 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_atribuicao_string_para_boolean.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+fi
+
+echo
 printf 'Resumo Analise Semantica: %d passou, %d falhou.\n' "$passou" "$falhou"
 (( falhou == 0 ))

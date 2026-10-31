@@ -467,8 +467,157 @@ static void teste_mutacao_constante_final_invalida(void) {
     printf("    [OK] Reatribuicao e incremento em constante final rejeitados com sucesso.\n");
 }
 
+static void teste_tipos_compativeis_matriz(void) {
+    printf("  [8] Executando teste_tipos_compativeis_matriz (Issue 8.5)...\n");
+
+    /* Widening conversions válidas do Java */
+    assert(tiposCompativeis(TIPO_DOUBLE, TIPO_INT) == 1);
+    assert(tiposCompativeis(TIPO_FLOAT, TIPO_INT) == 1);
+    assert(tiposCompativeis(TIPO_LONG, TIPO_INT) == 1);
+    assert(tiposCompativeis(TIPO_INT, TIPO_SHORT) == 1);
+    assert(tiposCompativeis(TIPO_INT, TIPO_BYTE) == 1);
+    assert(tiposCompativeis(TIPO_INT, TIPO_CHAR) == 1);
+    assert(tiposCompativeis(TIPO_DOUBLE, TIPO_FLOAT) == 1);
+    assert(tiposCompativeis(TIPO_DOUBLE, TIPO_LONG) == 1);
+    assert(tiposCompativeis(TIPO_DOUBLE, TIPO_SHORT) == 1);
+    assert(tiposCompativeis(TIPO_DOUBLE, TIPO_BYTE) == 1);
+    assert(tiposCompativeis(TIPO_DOUBLE, TIPO_CHAR) == 1);
+    assert(tiposCompativeis(TIPO_BOOLEAN, TIPO_BOOLEAN) == 1);
+    assert(tiposCompativeis(TIPO_STRING, TIPO_STRING) == 1);
+
+    /* Narrowing sem cast explícito (proibido) */
+    assert(tiposCompativeis(TIPO_INT, TIPO_DOUBLE) == 0);
+    assert(tiposCompativeis(TIPO_INT, TIPO_FLOAT) == 0);
+    assert(tiposCompativeis(TIPO_INT, TIPO_LONG) == 0);
+    assert(tiposCompativeis(TIPO_SHORT, TIPO_INT) == 0);
+    assert(tiposCompativeis(TIPO_BYTE, TIPO_SHORT) == 0);
+    assert(tiposCompativeis(TIPO_FLOAT, TIPO_DOUBLE) == 0);
+    assert(tiposCompativeis(TIPO_CHAR, TIPO_INT) == 0);
+
+    /* Tipos incompatíveis */
+    assert(tiposCompativeis(TIPO_BOOLEAN, TIPO_INT) == 0);
+    assert(tiposCompativeis(TIPO_INT, TIPO_BOOLEAN) == 0);
+    assert(tiposCompativeis(TIPO_BOOLEAN, TIPO_STRING) == 0);
+    assert(tiposCompativeis(TIPO_STRING, TIPO_BOOLEAN) == 0);
+    assert(tiposCompativeis(TIPO_STRING, TIPO_INT) == 0);
+    assert(tiposCompativeis(TIPO_INT, TIPO_STRING) == 0);
+
+    /* Nomes dos tipos */
+    assert(strcmp(nomeTipoDado(TIPO_INT), "int") == 0);
+    assert(strcmp(nomeTipoDado(TIPO_DOUBLE), "double") == 0);
+    assert(strcmp(nomeTipoDado(TIPO_BOOLEAN), "boolean") == 0);
+    assert(strcmp(nomeTipoDado(TIPO_STRING), "String") == 0);
+
+    printf("    [OK] Matriz de compatibilidade e conversoes widening validadas.\n");
+}
+
+static void teste_atribuicao_e_inicializacao_tipos(void) {
+    printf("  [9] Executando teste_atribuicao_e_inicializacao_tipos (Issue 8.5)...\n");
+
+    /* Caso 1: Atribuicao valida com coercao int -> double */
+    {
+        NoAST *classe = criarNo(NO_CLASSE, 1);
+        classe->valor.valor_str = strdup("ValidoCoercao");
+
+        NoAST *metodo = criarNo(NO_METODO, 2);
+        metodo->tipo_dado = TIPO_VOID;
+        metodo->valor.valor_str = strdup("metodo");
+        adicionarFilho(metodo, criarNo(NO_PARAMETROS, 2));
+
+        NoAST *corpo = criarNo(NO_BLOCO, 3);
+        NoAST *decl_d = criarNo(NO_DECL_VARIAVEL, 4);
+        decl_d->tipo_dado = TIPO_DOUBLE;
+        decl_d->valor.valor_str = strdup("d");
+        adicionarFilho(corpo, decl_d);
+
+        NoAST *atrib = criarNo(NO_ATRIBUICAO, 5);
+        NoAST *id_d = criarNo(NO_IDENTIFICADOR, 5);
+        id_d->valor.valor_str = strdup("d");
+        NoAST *lit42 = criarNo(NO_LITERAL_INT, 5);
+        lit42->valor.valor_int = 42;
+        adicionarFilho(atrib, id_d);
+        adicionarFilho(atrib, lit42);
+        adicionarFilho(corpo, atrib);
+
+        adicionarFilho(metodo, corpo);
+        adicionarFilho(classe, metodo);
+
+        int res = verificarEscopos(classe);
+        assert(res == 1);
+
+        liberarAST(classe);
+        liberarTabelaSimbolos();
+    }
+
+    /* Caso 2: Atribuicao invalida double -> int (narrowing) */
+    {
+        NoAST *classe = criarNo(NO_CLASSE, 1);
+        classe->valor.valor_str = strdup("InvalidoNarrowing");
+
+        NoAST *metodo = criarNo(NO_METODO, 2);
+        metodo->tipo_dado = TIPO_VOID;
+        metodo->valor.valor_str = strdup("metodo");
+        adicionarFilho(metodo, criarNo(NO_PARAMETROS, 2));
+
+        NoAST *corpo = criarNo(NO_BLOCO, 3);
+        NoAST *decl_a = criarNo(NO_DECL_VARIAVEL, 4);
+        decl_a->tipo_dado = TIPO_INT;
+        decl_a->valor.valor_str = strdup("a");
+        adicionarFilho(corpo, decl_a);
+
+        NoAST *atrib = criarNo(NO_ATRIBUICAO, 5);
+        NoAST *id_a = criarNo(NO_IDENTIFICADOR, 5);
+        id_a->valor.valor_str = strdup("a");
+        NoAST *litDouble = criarNo(NO_LITERAL_DOUBLE, 5);
+        litDouble->valor.valor_double = 3.14;
+        adicionarFilho(atrib, id_a);
+        adicionarFilho(atrib, litDouble);
+        adicionarFilho(corpo, atrib);
+
+        adicionarFilho(metodo, corpo);
+        adicionarFilho(classe, metodo);
+
+        int res = verificarEscopos(classe);
+        assert(res == 0);
+
+        liberarAST(classe);
+        liberarTabelaSimbolos();
+    }
+
+    /* Caso 3: Inicializacao invalida String -> boolean */
+    {
+        NoAST *classe = criarNo(NO_CLASSE, 1);
+        classe->valor.valor_str = strdup("InvalidoInit");
+
+        NoAST *metodo = criarNo(NO_METODO, 2);
+        metodo->tipo_dado = TIPO_VOID;
+        metodo->valor.valor_str = strdup("metodo");
+        adicionarFilho(metodo, criarNo(NO_PARAMETROS, 2));
+
+        NoAST *corpo = criarNo(NO_BLOCO, 3);
+        NoAST *decl_flag = criarNo(NO_DECL_VARIAVEL, 4);
+        decl_flag->tipo_dado = TIPO_BOOLEAN;
+        decl_flag->valor.valor_str = strdup("flag");
+        NoAST *litStr = criarNo(NO_LITERAL_STRING, 4);
+        litStr->valor.valor_str = strdup("texto");
+        adicionarFilho(decl_flag, litStr);
+        adicionarFilho(corpo, decl_flag);
+
+        adicionarFilho(metodo, corpo);
+        adicionarFilho(classe, metodo);
+
+        int res = verificarEscopos(classe);
+        assert(res == 0);
+
+        liberarAST(classe);
+        liberarTabelaSimbolos();
+    }
+
+    printf("    [OK] Verificacao semantica de atribuicoes e inicializacoes validada.\n");
+}
+
 int main(void) {
-    printf("=== Executando teste_escopos_unitario (Issues 8.3 e 8.4) ===\n");
+    printf("=== Executando teste_escopos_unitario (Issues 8.3, 8.4 e 8.5) ===\n");
     teste_declaracao_e_shadowing_valido();
     teste_variavel_nao_declarada();
     teste_redeclaracao_mesmo_escopo();
@@ -476,6 +625,8 @@ int main(void) {
     teste_escopo_for();
     teste_constante_final_valida();
     teste_mutacao_constante_final_invalida();
+    teste_tipos_compativeis_matriz();
+    teste_atribuicao_e_inicializacao_tipos();
     printf("teste_escopos_unitario passou com sucesso!\n");
     return 0;
 }
