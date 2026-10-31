@@ -329,13 +329,153 @@ static void teste_escopo_for(void) {
     printf("    [OK] Escopo de comando for validado com sucesso.\n");
 }
 
+static void teste_constante_final_valida(void) {
+    printf("  [6] Executando teste_constante_final_valida...\n");
+
+    /*
+     * class ConstanteValida {
+     *     void metodo() {
+     *         final int LIMITE = 50;
+     *         int v = LIMITE + 5;
+     *     }
+     * }
+     */
+    NoAST *classe = criarNo(NO_CLASSE, 1);
+    classe->valor.valor_str = strdup("ConstanteValida");
+
+    NoAST *metodo = criarNo(NO_METODO, 2);
+    metodo->tipo_dado = TIPO_VOID;
+    metodo->valor.valor_str = strdup("metodo");
+
+    NoAST *params = criarNo(NO_PARAMETROS, 2);
+    adicionarFilho(metodo, params);
+
+    NoAST *corpo = criarNo(NO_BLOCO, 3);
+
+    NoAST *decl_limite = criarNo(NO_DECL_VARIAVEL, 4);
+    decl_limite->tipo_dado = TIPO_INT;
+    decl_limite->mods.eh_final = 1;
+    decl_limite->mods.is_final = 1;
+    decl_limite->valor.valor_str = strdup("LIMITE");
+    NoAST *lit50 = criarNo(NO_LITERAL_INT, 4);
+    lit50->valor.valor_int = 50;
+    adicionarFilho(decl_limite, lit50);
+    adicionarFilho(corpo, decl_limite);
+
+    NoAST *decl_v = criarNo(NO_DECL_VARIAVEL, 5);
+    decl_v->tipo_dado = TIPO_INT;
+    decl_v->valor.valor_str = strdup("v");
+    NoAST *soma = criarNo(NO_OP_BINARIA, 5);
+    strncpy(soma->valor.operador, "+", sizeof(soma->valor.operador) - 1);
+    NoAST *id_limite = criarNo(NO_IDENTIFICADOR, 5);
+    id_limite->valor.valor_str = strdup("LIMITE");
+    NoAST *lit5 = criarNo(NO_LITERAL_INT, 5);
+    lit5->valor.valor_int = 5;
+    adicionarFilho(soma, id_limite);
+    adicionarFilho(soma, lit5);
+    adicionarFilho(decl_v, soma);
+    adicionarFilho(corpo, decl_v);
+
+    adicionarFilho(metodo, corpo);
+    adicionarFilho(classe, metodo);
+
+    int res = verificarEscopos(classe);
+    assert(res == 1);
+    assert(decl_limite->simbolo != NULL);
+    assert(decl_limite->simbolo->is_final == 1);
+    assert(id_limite->simbolo == decl_limite->simbolo);
+
+    liberarAST(classe);
+    liberarTabelaSimbolos();
+    printf("    [OK] Constante final declarada, inicializada e consultada com sucesso.\n");
+}
+
+static void teste_mutacao_constante_final_invalida(void) {
+    printf("  [7] Executando teste_mutacao_constante_final_invalida...\n");
+
+    /* Caso A: Reatribuicao a constante final */
+    {
+        NoAST *classe = criarNo(NO_CLASSE, 1);
+        classe->valor.valor_str = strdup("InvalidoReatrib");
+
+        NoAST *metodo = criarNo(NO_METODO, 2);
+        metodo->tipo_dado = TIPO_VOID;
+        metodo->valor.valor_str = strdup("metodo");
+        adicionarFilho(metodo, criarNo(NO_PARAMETROS, 2));
+
+        NoAST *corpo = criarNo(NO_BLOCO, 3);
+        NoAST *decl_c = criarNo(NO_DECL_VARIAVEL, 4);
+        decl_c->tipo_dado = TIPO_INT;
+        decl_c->mods.eh_final = 1;
+        decl_c->mods.is_final = 1;
+        decl_c->valor.valor_str = strdup("MAX");
+        adicionarFilho(corpo, decl_c);
+
+        NoAST *atrib = criarNo(NO_ATRIBUICAO, 5);
+        NoAST *id_c = criarNo(NO_IDENTIFICADOR, 5);
+        id_c->valor.valor_str = strdup("MAX");
+        NoAST *lit20 = criarNo(NO_LITERAL_INT, 5);
+        lit20->valor.valor_int = 20;
+        adicionarFilho(atrib, id_c);
+        adicionarFilho(atrib, lit20);
+        adicionarFilho(corpo, atrib);
+
+        adicionarFilho(metodo, corpo);
+        adicionarFilho(classe, metodo);
+
+        int res = verificarEscopos(classe);
+        assert(res == 0);
+
+        liberarAST(classe);
+        liberarTabelaSimbolos();
+    }
+
+    /* Caso B: Incremento em constante final */
+    {
+        NoAST *classe = criarNo(NO_CLASSE, 1);
+        classe->valor.valor_str = strdup("InvalidoInc");
+
+        NoAST *metodo = criarNo(NO_METODO, 2);
+        metodo->tipo_dado = TIPO_VOID;
+        metodo->valor.valor_str = strdup("metodo");
+        adicionarFilho(metodo, criarNo(NO_PARAMETROS, 2));
+
+        NoAST *corpo = criarNo(NO_BLOCO, 3);
+        NoAST *decl_c = criarNo(NO_DECL_VARIAVEL, 4);
+        decl_c->tipo_dado = TIPO_INT;
+        decl_c->mods.eh_final = 1;
+        decl_c->mods.is_final = 1;
+        decl_c->valor.valor_str = strdup("CONTADOR");
+        adicionarFilho(corpo, decl_c);
+
+        NoAST *inc = criarNo(NO_INCREMENTO, 5);
+        NoAST *id_c = criarNo(NO_IDENTIFICADOR, 5);
+        id_c->valor.valor_str = strdup("CONTADOR");
+        adicionarFilho(inc, id_c);
+        adicionarFilho(corpo, inc);
+
+        adicionarFilho(metodo, corpo);
+        adicionarFilho(classe, metodo);
+
+        int res = verificarEscopos(classe);
+        assert(res == 0);
+
+        liberarAST(classe);
+        liberarTabelaSimbolos();
+    }
+
+    printf("    [OK] Reatribuicao e incremento em constante final rejeitados com sucesso.\n");
+}
+
 int main(void) {
-    printf("=== Executando teste_escopos_unitario (Issue 8.3) ===\n");
+    printf("=== Executando teste_escopos_unitario (Issues 8.3 e 8.4) ===\n");
     teste_declaracao_e_shadowing_valido();
     teste_variavel_nao_declarada();
     teste_redeclaracao_mesmo_escopo();
     teste_acesso_fora_do_escopo();
     teste_escopo_for();
+    teste_constante_final_valida();
+    teste_mutacao_constante_final_invalida();
     printf("teste_escopos_unitario passou com sucesso!\n");
     return 0;
 }
