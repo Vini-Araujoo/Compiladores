@@ -1,0 +1,19 @@
+NO_PROGRAMA
+└── filho[0]: NO_CLASSE (TesteDivisaoVariavel)
+    └── filho[0]: NO_METODO (main)
+        ├── filho[0]: NO_PARAMETROS
+        │   └── filho[0]: NO_PARAMETRO (args) : TIPO_INDEFINIDO
+        └── filho[1]: NO_BLOCO
+            ├── filho[0]: NO_VAR_DECL
+            │   ├── filho[0]: NO_IDENTIFICADOR (a) : TIPO_INT
+            │   └── filho[1]: NO_LITERAL_INT (10) : TIPO_INT
+            ├── filho[1]: NO_VAR_DECL
+            │   ├── filho[0]: NO_IDENTIFICADOR (b) : TIPO_INT
+            │   └── filho[1]: NO_LITERAL_INT (0) : TIPO_INT
+            └── filho[2]: NO_VAR_DECL
+                ├── filho[0]: NO_IDENTIFICADOR (c) : TIPO_INT
+                └── filho[1]: NO_OP_BINARIA (/) : TIPO_INT
+                    ├── filho[0]: NO_IDENTIFICADOR (a) : TIPO_INT
+                    └── filho[1]: NO_IDENTIFICADOR (b) : TIPO_INT
+
+Analise semantica de tipos concluida com sucesso.

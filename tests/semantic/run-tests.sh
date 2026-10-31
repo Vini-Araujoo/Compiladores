@@ -65,5 +65,12 @@ executar_arvore_positiva "$TEST_DIR/valido_operacao_comparacao_numeros.java" \
 executar_negativo "$TEST_DIR/invalido_soma_booleana.java" 3
 executar_negativo "$TEST_DIR/invalido_e_logico_com_inteiros.java" 3
 
+echo "=== Testes de Casos Especiais ==="
+executar_arvore_positiva "$TEST_DIR/valido_divisao_por_variavel.java" \
+    "$TEST_DIR/esperado/valido_divisao_por_variavel.txt"
+
+executar_negativo "$TEST_DIR/invalido_divisao_literal_zero.java" 4
+executar_negativo "$TEST_DIR/invalido_modulo_literal_zero.java" 4
+
 printf 'Resumo: %d passou, %d falhou.\n' "$passou" "$falhou"
 (( falhou == 0 ))

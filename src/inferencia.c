@@ -32,6 +32,18 @@ static TipoDado promocaoNumerica(TipoDado esquerda, TipoDado direita) {
     return TIPO_INT;
 }
 
+static int verificaDivisaoPorZero(NoAST *no_dir, const char *op) {
+    if (strcmp(op, "/") == 0 || strcmp(op, "%") == 0) {
+        if (no_dir->tipo_no == NO_LITERAL_INT && no_dir->valor.valor_int == 0) {
+            return 1;
+        }
+        if (no_dir->tipo_no == NO_LITERAL_DOUBLE && no_dir->valor.valor_double == 0.0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 static TipoDado inferirOperacaoBinaria(NoAST *no) {
     TipoDado esquerda = inferirTipoExpressao(no->filhos[0]);
     TipoDado direita = inferirTipoExpressao(no->filhos[1]);
@@ -56,6 +68,12 @@ static TipoDado inferirOperacaoBinaria(NoAST *no) {
 
     if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0 || 
         strcmp(op, "*") == 0 || strcmp(op, "/") == 0 || strcmp(op, "%") == 0) {
+        
+        if (verificaDivisaoPorZero(no->filhos[1], op)) {
+            fprintf(stderr, "Erro semantico na linha %d: Divisao literal por zero detectada na analise estatica.\n", no->linha);
+            return TIPO_INDEFINIDO;
+        }
+
         if (!ehNumerico(esquerda) || !ehNumerico(direita)) {
              fprintf(stderr, "Erro semantico na linha %d: Operador aritmetico '%s' aplicado a tipos incompativeis.\n", no->linha, op);
              return TIPO_INDEFINIDO;
