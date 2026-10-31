@@ -133,6 +133,9 @@ static void verificarDeclaracao(NoAST *no) {
     /* Container de múltiplas declarações (ex.: int a = 1, b, c = 3;) */
     if (no->valor.valor_str == NULL) {
         for (int i = 0; i < no->num_filhos; i++) {
+            if (no->mods.eh_final || no->mods.is_final) {
+                no->filhos[i]->mods = no->mods;
+            }
             verificarDeclaracao(no->filhos[i]);
         }
         return;
@@ -152,7 +155,7 @@ static void verificarDeclaracao(NoAST *no) {
                 linha, nome);
         erros_escopo++;
     } else {
-        Modificadores mods = MODIFICADORES_PADRAO;
+        Modificadores mods = no->mods;
         inserirSimbolo(nome, no->tipo_dado, mods, linha);
         no->simbolo = buscarSimboloEscopoAtual(nome);
     }
@@ -177,7 +180,7 @@ static void verificarMetodoEscopo(NoAST *no) {
                             linha, nome);
                     erros_escopo++;
                 } else {
-                    Modificadores mods = MODIFICADORES_PADRAO;
+                    Modificadores mods = p->mods;
                     inserirSimbolo(nome, p->tipo_dado, mods, linha);
                     p->simbolo = buscarSimboloEscopoAtual(nome);
                 }
@@ -305,24 +308,82 @@ static void verificarNoEscopo(NoAST *no) {
                 verificarNoEscopo(no->filhos[i]);
             }
             if (no->num_filhos > 0 && no->filhos[0]) {
-                if (no->filhos[0]->tipo_no == NO_IDENTIFICADOR && no->filhos[0]->simbolo) {
-                    no->simbolo = no->filhos[0]->simbolo;
-                    no->tipo_dado = no->filhos[0]->tipo_dado;
+                if (no->filhos[0]->tipo_no == NO_IDENTIFICADOR) {
+                    Simbolo *s = no->filhos[0]->simbolo ? no->filhos[0]->simbolo : buscarSimbolo(no->filhos[0]->valor.valor_str);
+                    if (s) {
+                        no->simbolo = s;
+                        no->tipo_dado = s->tipo;
+                        if (s->is_final || s->mods.eh_final) {
+                            int linha = obterLinha(no);
+                            fprintf(stderr, "Erro semantico na linha %d: variavel final '%s' nao pode ser reatribuida.\n",
+                                    linha, s->nome);
+                            erros_escopo++;
+                        }
+                    }
                 }
             }
             break;
 
         case NO_INCREMENTO:
-        case NO_DECREMENTO:
         case NO_INCREMENTO_ANTES:
+            for (int i = 0; i < no->num_filhos; i++) {
+                verificarNoEscopo(no->filhos[i]);
+            }
+            if (no->num_filhos > 0 && no->filhos[0]) {
+                if (no->filhos[0]->tipo_no == NO_IDENTIFICADOR) {
+                    Simbolo *s = no->filhos[0]->simbolo ? no->filhos[0]->simbolo : buscarSimbolo(no->filhos[0]->valor.valor_str);
+                    if (s) {
+                        no->simbolo = s;
+                        no->tipo_dado = s->tipo;
+                        if (s->is_final || s->mods.eh_final) {
+                            int linha = obterLinha(no);
+                            fprintf(stderr, "Erro semantico na linha %d: variavel final '%s' nao pode ser incrementada.\n",
+                                    linha, s->nome);
+                            erros_escopo++;
+                        }
+                    }
+                }
+            }
+            break;
+
+        case NO_DECREMENTO:
         case NO_DECREMENTO_ANTES:
             for (int i = 0; i < no->num_filhos; i++) {
                 verificarNoEscopo(no->filhos[i]);
             }
             if (no->num_filhos > 0 && no->filhos[0]) {
-                if (no->filhos[0]->tipo_no == NO_IDENTIFICADOR && no->filhos[0]->simbolo) {
-                    no->simbolo = no->filhos[0]->simbolo;
-                    no->tipo_dado = no->filhos[0]->tipo_dado;
+                if (no->filhos[0]->tipo_no == NO_IDENTIFICADOR) {
+                    Simbolo *s = no->filhos[0]->simbolo ? no->filhos[0]->simbolo : buscarSimbolo(no->filhos[0]->valor.valor_str);
+                    if (s) {
+                        no->simbolo = s;
+                        no->tipo_dado = s->tipo;
+                        if (s->is_final || s->mods.eh_final) {
+                            int linha = obterLinha(no);
+                            fprintf(stderr, "Erro semantico na linha %d: variavel final '%s' nao pode ser decrementada.\n",
+                                    linha, s->nome);
+                            erros_escopo++;
+                        }
+                    }
+                }
+            }
+            break;
+
+        case NO_OP_UNARIA:
+            for (int i = 0; i < no->num_filhos; i++) {
+                verificarNoEscopo(no->filhos[i]);
+            }
+            if (no->num_filhos > 0 && no->filhos[0]) {
+                if (strcmp(no->valor.operador, "++") == 0 || strcmp(no->valor.operador, "--") == 0) {
+                    if (no->filhos[0]->tipo_no == NO_IDENTIFICADOR) {
+                        Simbolo *s = no->filhos[0]->simbolo ? no->filhos[0]->simbolo : buscarSimbolo(no->filhos[0]->valor.valor_str);
+                        if (s && (s->is_final || s->mods.eh_final)) {
+                            int linha = obterLinha(no);
+                            const char *acao = (strcmp(no->valor.operador, "++") == 0) ? "incrementada" : "decrementada";
+                            fprintf(stderr, "Erro semantico na linha %d: variavel final '%s' nao pode ser %s.\n",
+                                    linha, s->nome, acao);
+                            erros_escopo++;
+                        }
+                    }
                 }
             }
             break;
