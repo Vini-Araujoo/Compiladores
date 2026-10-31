@@ -4,6 +4,7 @@
 #include "tabela.h"
 
 static Escopo *escopo_atual = NULL;
+static Escopo *todos_escopos = NULL;
 
 static unsigned int hashString(const char *str) {
     unsigned long hash = 5381;
@@ -34,6 +35,8 @@ void empilharEscopo(void) {
 
     novo->pai = escopo_atual;
     novo->nivel = (escopo_atual != NULL) ? escopo_atual->nivel + 1 : 0;
+    novo->proximo_alocado = todos_escopos;
+    todos_escopos = novo;
     escopo_atual = novo;
 }
 
@@ -41,21 +44,7 @@ void desempilharEscopo(void) {
     if (!escopo_atual) {
         return;
     }
-
-    Escopo *escopo_remover = escopo_atual;
     escopo_atual = escopo_atual->pai;
-
-    for (int i = 0; i < TAM_TABELA_HASH; i++) {
-        Simbolo *simb = escopo_remover->tabela[i];
-        while (simb) {
-            Simbolo *proximo = simb->proximo;
-            free(simb->nome);
-            free(simb);
-            simb = proximo;
-        }
-    }
-
-    free(escopo_remover);
 }
 
 int inserirSimbolo(char *nome, TipoDado tipo, Modificadores mods, int linha) {
@@ -136,7 +125,21 @@ Escopo *obterEscopoAtual(void) {
 }
 
 void liberarTabelaSimbolos(void) {
-    while (escopo_atual != NULL) {
-        desempilharEscopo();
+    escopo_atual = NULL;
+    Escopo *esc = todos_escopos;
+    while (esc) {
+        Escopo *prox = esc->proximo_alocado;
+        for (int i = 0; i < TAM_TABELA_HASH; i++) {
+            Simbolo *simb = esc->tabela[i];
+            while (simb) {
+                Simbolo *proximo = simb->proximo;
+                free(simb->nome);
+                free(simb);
+                simb = proximo;
+            }
+        }
+        free(esc);
+        esc = prox;
     }
+    todos_escopos = NULL;
 }

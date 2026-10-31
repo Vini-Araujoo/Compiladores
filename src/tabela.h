@@ -39,6 +39,7 @@ typedef struct Escopo {
     Simbolo *tabela[TAM_TABELA_HASH];
     struct Escopo *pai;
     int nivel;
+    struct Escopo *proximo_alocado; /* Encadeamento de todos os escopos alocados */
 } Escopo;
 
 /*
