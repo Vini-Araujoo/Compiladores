@@ -86,6 +86,30 @@ static NoAST *cria_no_expressao_generica(NoAST *filho1, NoAST *filho2) {
     }
     return no;
 }
+
+static NoAST *cria_no_atribuicao(const char *operador, NoAST *alvo, NoAST *expressao) {
+    NoAST *no = criarNo(NO_ATRIBUICAO, alvo ? alvo->linha : yylineno);
+    if (operador) {
+        strncpy(no->valor.operador, operador, sizeof(no->valor.operador) - 1);
+        no->valor.operador[sizeof(no->valor.operador) - 1] = '\0';
+    }
+    adicionarFilho(no, alvo);
+    adicionarFilho(no, expressao);
+    return no;
+}
+
+static void adicionar_declaracoes_a_pai(NoAST *pai, NoAST *decls) {
+    if (!pai || !decls) return;
+    if (decls->tipo_no == NO_DECL_VARIAVEL && decls->valor.valor_str == NULL) {
+        for (int i = 0; i < decls->num_filhos; i++) {
+            adicionarFilho(pai, decls->filhos[i]);
+        }
+        free(decls->filhos);
+        free(decls);
+    } else {
+        adicionarFilho(pai, decls);
+    }
+}
 %}
 
 // primitivos
@@ -222,7 +246,8 @@ static NoAST *cria_no_expressao_generica(NoAST *filho1, NoAST *filho2) {
 
 %type <no> programa declaracao_classe corpo_classe membro_classe
 %type <no> bloco comando lista_comandos condicional condicao comando_if
-%type <no> declaracao_local atribuicao comando_io repeticao comando_salto
+%type <no> declaracao_local declaracao_variavel lista_declaracoes item_declaracao
+%type <no> atribuicao comando_io repeticao comando_salto
 %type <no> expressao expressao_sintatica comando_return comando_switch casos_switch case_switch
 %type <no> default_switch declaracao_metodo comando_print argumento_opcional
 %type <no> acesso_array leitura_scanner chamada_metodo
@@ -262,13 +287,13 @@ corpo_classe:
       %empty { $$ = criarNo(NO_CLASSE, 0); }
       | corpo_classe membro_classe 
         {
-            adicionarFilho($1, $2);
+            adicionar_declaracoes_a_pai($1, $2);
             $$ = $1;
         }
     ;
 
 membro_classe:
-      declaracao_variavel { $$ = criarNo(NO_VAR_DECL, 0); }
+      declaracao_variavel { $$ = $1; }
       | declaracao_metodo { $$ = $1; }
     ;
 
@@ -344,7 +369,9 @@ modificador:
       | TOKEN_FINAL
     ;
 tipo:
-        TOKEN_DOUBLE
+        TOKEN_BYTE
+        {$$ = TIPO_BYTE; }
+      | TOKEN_DOUBLE
         {$$ = TIPO_DOUBLE; }
       | TOKEN_INT
         {$$ = TIPO_INT; }
@@ -365,19 +392,44 @@ tipo:
     ;
 
 
-//Atributos da classe (STUB da Issue 1)
+// Declaracoes de variaveis da classe e locais
 declaracao_variavel:
         modificadores tipo lista_declaracoes TOKEN_PTOVIRG
+        {
+            for (int i = 0; i < $3->num_filhos; i++) {
+                if ($3->filhos[i]) {
+                    $3->filhos[i]->tipo_dado = $2;
+                }
+            }
+            $$ = $3;
+        }
       ;
 
 lista_declaracoes:
         item_declaracao
+        {
+            $$ = criarNo(NO_DECL_VARIAVEL, yylineno);
+            adicionarFilho($$, $1);
+        }
       | lista_declaracoes TOKEN_VIRGULA item_declaracao
+        {
+            adicionarFilho($1, $3);
+            $$ = $1;
+        }
       ;
 
 item_declaracao:
         ID
+        {
+            $$ = criarNo(NO_DECL_VARIAVEL, yylineno);
+            $$->valor.valor_str = $1;
+        }
       | ID TOKEN_ATRIB expressao
+        {
+            $$ = criarNo(NO_DECL_VARIAVEL, yylineno);
+            $$->valor.valor_str = $1;
+            adicionarFilho($$, $3);
+        }
       ;
 
 modificador_variavel:
@@ -397,7 +449,7 @@ lista_comandos:
         }
     | lista_comandos comando 
     { 
-        adicionarFilho($1, $2); 
+        adicionar_declaracoes_a_pai($1, $2); 
         $$ = $1;
     }
     ;
@@ -488,23 +540,25 @@ expressao_sintatica:
 
 declaracao_local:
       modificador_variavel tipo lista_declaracoes TOKEN_PTOVIRG
-        { $$ = criarNo(NO_VAR_DECL, 0); }
+        {
+            for (int i = 0; i < $3->num_filhos; i++) {
+                if ($3->filhos[i]) {
+                    $3->filhos[i]->tipo_dado = $2;
+                }
+            }
+            $$ = $3;
+        }
     ;
 
 atribuicao:
       ID TOKEN_ATRIB expressao TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_ATRIBUICAO, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
-            id->valor.valor_str = $1;
-            adicionarFilho($$, id);
-            adicionarFilho($$, $3);
+            NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+            $$ = cria_no_atribuicao("=", id, $3);
         }
     | acesso_array TOKEN_ATRIB expressao TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_ATRIBUICAO, 0);
-            adicionarFilho($$, $1);
-            adicionarFilho($$, $3);
+            $$ = cria_no_atribuicao("=", $1, $3);
         }
     | TOKEN_INCREMENTO ID TOKEN_PTOVIRG
         {
@@ -536,19 +590,21 @@ atribuicao:
         }
     | ID TOKEN_SOMA_ATRIB expressao TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_ATRIBUICAO, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
-            id->valor.valor_str = $1;
-            adicionarFilho($$, id);
-            adicionarFilho($$, $3);
+            NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+            $$ = cria_no_atribuicao("+=", id, $3);
         }
     | ID TOKEN_SUB_ATRIB expressao TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_ATRIBUICAO, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
-            id->valor.valor_str = $1;
-            adicionarFilho($$, id);
-            adicionarFilho($$, $3);
+            NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+            $$ = cria_no_atribuicao("-=", id, $3);
+        }
+    | acesso_array TOKEN_SOMA_ATRIB expressao TOKEN_PTOVIRG
+        {
+            $$ = cria_no_atribuicao("+=", $1, $3);
+        }
+    | acesso_array TOKEN_SUB_ATRIB expressao TOKEN_PTOVIRG
+        {
+            $$ = cria_no_atribuicao("-=", $1, $3);
         }
     ;
 
@@ -747,13 +803,24 @@ atribuicao_for:
       TOKEN_PTOVIRG { $$ = NULL; }
     | ID TOKEN_ATRIB expressao TOKEN_PTOVIRG 
         { 
-            $$ = criarNo(NO_ATRIBUICAO, 0); 
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
-            id->valor.valor_str = $1;
-            adicionarFilho($$, id);
-            adicionarFilho($$, $3);
+            NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+            $$ = cria_no_atribuicao("=", id, $3);
         }
-    | declaracao_local { $$ = $1; }
+    | declaracao_local 
+        { 
+            if ($1 && $1->tipo_no == NO_DECL_VARIAVEL && $1->valor.valor_str == NULL) {
+                if ($1->num_filhos == 1) {
+                    NoAST *unico = $1->filhos[0];
+                    free($1->filhos);
+                    free($1);
+                    $$ = unico;
+                } else {
+                    $$ = $1;
+                }
+            } else {
+                $$ = $1;
+            }
+        }
     ;
 
 condicao_for:
@@ -765,11 +832,18 @@ incremento_for:
       %empty { $$ = NULL; }
     | ID TOKEN_ATRIB expressao 
     { 
-        $$ = criarNo(NO_ATRIBUICAO, 0);
-        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
-        id->valor.valor_str = $1;
-        adicionarFilho($$, id);
-        adicionarFilho($$, $3);
+        NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+        $$ = cria_no_atribuicao("=", id, $3);
+    }
+    | ID TOKEN_SOMA_ATRIB expressao
+    {
+        NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+        $$ = cria_no_atribuicao("+=", id, $3);
+    }
+    | ID TOKEN_SUB_ATRIB expressao
+    {
+        NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+        $$ = cria_no_atribuicao("-=", id, $3);
     }
     | ID TOKEN_INCREMENTO
     {
@@ -839,7 +913,7 @@ comando_while:
 %%
 
 void yyerror(const char *mensagem) {
-    fprintf(stderr, "Erro sintatico na linha %d: %s\n", yylineno, mensagem);
+    fprintf(stderr, "Erro sintatico: na linha %d: %s\n", yylineno, mensagem);
 }
 
 int main(void) {

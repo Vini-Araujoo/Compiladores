@@ -22,7 +22,8 @@ typedef enum {
     NO_METODO,
     NO_PARAMETROS,
     NO_PARAMETRO,
-    NO_VAR_DECL,
+    NO_DECL_VARIAVEL,
+#define NO_VAR_DECL NO_DECL_VARIAVEL
     NO_BLOCO,
 
     NO_IF,
