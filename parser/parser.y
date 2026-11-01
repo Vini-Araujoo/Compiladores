@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../src/ast.h"
+#include "../src/tabela.h"
+#include "../src/semantica.h"
 
 int yylex(void);
 void yyerror(const char *mensagem);
@@ -562,29 +564,29 @@ atribuicao:
         }
     | TOKEN_INCREMENTO ID TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_INCREMENTO_ANTES, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            $$ = criarNo(NO_INCREMENTO_ANTES, yylineno);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
             id->valor.valor_str = $2;
             adicionarFilho($$, id);
         }
     | TOKEN_DECREMENTO ID TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_DECREMENTO_ANTES, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            $$ = criarNo(NO_DECREMENTO_ANTES, yylineno);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
             id->valor.valor_str = $2;
             adicionarFilho($$, id);
         }
     | ID TOKEN_INCREMENTO TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_INCREMENTO, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            $$ = criarNo(NO_INCREMENTO, yylineno);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
             id->valor.valor_str = $1;
             adicionarFilho($$, id);
         }
     | ID TOKEN_DECREMENTO TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_DECREMENTO, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            $$ = criarNo(NO_DECREMENTO, yylineno);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
             id->valor.valor_str = $1;
             adicionarFilho($$, id);
         }
@@ -847,29 +849,29 @@ incremento_for:
     }
     | ID TOKEN_INCREMENTO
     {
-        $$ = criarNo(NO_INCREMENTO, 0);
-        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        $$ = criarNo(NO_INCREMENTO, yylineno);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
         id->valor.valor_str = $1;
         adicionarFilho($$, id);
     }
     | ID TOKEN_DECREMENTO
     {
-        $$ = criarNo(NO_DECREMENTO, 0);
-        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        $$ = criarNo(NO_DECREMENTO, yylineno);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
         id->valor.valor_str = $1;
         adicionarFilho($$, id);
     }
     | TOKEN_INCREMENTO ID
     {
-        $$ = criarNo(NO_INCREMENTO_ANTES, 0);
-        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        $$ = criarNo(NO_INCREMENTO_ANTES, yylineno);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
         id->valor.valor_str = $2;
         adicionarFilho($$, id);
     }
     | TOKEN_DECREMENTO ID
     {
-        $$ = criarNo(NO_DECREMENTO_ANTES, 0);
-        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        $$ = criarNo(NO_DECREMENTO_ANTES, yylineno);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
         id->valor.valor_str = $2;
         adicionarFilho($$, id);
     }
@@ -916,13 +918,32 @@ void yyerror(const char *mensagem) {
     fprintf(stderr, "Erro sintatico: na linha %d: %s\n", yylineno, mensagem);
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+    int executar_semantico = 0;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--semantico") == 0 || strcmp(argv[i], "-s") == 0) {
+            executar_semantico = 1;
+        }
+    }
+    if (getenv("ANALISE_SEMANTICA") != NULL && strcmp(getenv("ANALISE_SEMANTICA"), "1") == 0) {
+        executar_semantico = 1;
+    }
+
     if (yyparse() == 0) {
+        if (executar_semantico && arvore) {
+            int sucesso = verificarEscopos(arvore);
+            if (!sucesso) {
+                liberarAST(arvore);
+                liberarTabelaSimbolos();
+                return 1;
+            }
+        }
         if (arvore) {
             imprimirAST(arvore);
         }
         printf("\nAnalise sintatica concluida com sucesso.\n");
         liberarAST(arvore);
+        liberarTabelaSimbolos();
         return 0;
     }
     return 1;

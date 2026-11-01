@@ -24,4 +24,7 @@ TipoDado inferirTipoExpressao(const NoAST *expressao);
 int validarAcessoArray(const char *nome, const NoAST *indice, int linha);
 int validarChamadaMetodo(const char *nome, const NoAST *argumentos, int linha);
 
+/* Passagem semântica para verificação e resolução de escopos (Issue 8.3) */
+int verificarEscopos(NoAST *raiz);
+
 #endif
