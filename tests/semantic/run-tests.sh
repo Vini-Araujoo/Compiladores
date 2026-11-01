@@ -269,6 +269,46 @@ if [[ -x "$BIN_SEMANTIC" ]]; then
         printf '         Saida: %s\n' "$saida"
         ((falhou += 1))
     fi
+
+    echo
+    echo "=== Executando testes de Validacao de Operadores (Issue 9.4) ==="
+
+    # 15. Teste positivo de comparacao de numeros
+    saida="$(exec_bin "$BIN_SEMANTIC" < "$SEMANTIC_DIR/valido_operacao_comparacao_numeros.java")"
+    status=$?
+    esperado="$(cat "$SEMANTIC_DIR/esperado/valido_operacao_comparacao_numeros.txt")"
+    if [[ $status -eq 0 && "$saida" == "$esperado" ]]; then
+        printf '  [PASS] valido_operacao_comparacao_numeros.java aceito e arvore tipada identica\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] valido_operacao_comparacao_numeros.java falhou (status %d)\n' "$status"
+        diff <(printf '%s\n' "$saida") "$SEMANTIC_DIR/esperado/valido_operacao_comparacao_numeros.txt" | head -20 | sed 's/^/         /'
+        ((falhou += 1))
+    fi
+
+    # 16. Teste negativo de soma booleana
+    saida="$(exec_bin "$BIN_SEMANTIC" < "$SEMANTIC_DIR/invalido_soma_booleana.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 3"* ]]; then
+        printf '  [PASS] invalido_soma_booleana.java rejeitado corretamente na linha 3 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_soma_booleana.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+
+    # 17. Teste negativo de E logico com inteiros
+    saida="$(exec_bin "$BIN_SEMANTIC" < "$SEMANTIC_DIR/invalido_e_logico_com_inteiros.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 3"* ]]; then
+        printf '  [PASS] invalido_e_logico_com_inteiros.java rejeitado corretamente na linha 3 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_e_logico_com_inteiros.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
 fi
 
 echo

@@ -1,0 +1,19 @@
+NO_CLASSE (TestePositivo)
+└── filho[0]: NO_METODO (main)
+    ├── filho[0]: NO_PARAMETROS
+    │   └── filho[0]: NO_PARAMETRO (args) : TIPO_ARRAY
+    └── filho[1]: NO_BLOCO
+        ├── filho[0]: NO_DECL_VARIAVEL (a) : TIPO_INT
+        │   └── filho[0]: NO_LITERAL_INT (10) : TIPO_INT
+        ├── filho[1]: NO_DECL_VARIAVEL (b) : TIPO_DOUBLE
+        │   └── filho[0]: NO_LITERAL_DOUBLE (5.5) : TIPO_DOUBLE
+        ├── filho[2]: NO_DECL_VARIAVEL (c) : TIPO_BOOLEAN
+        │   └── filho[0]: NO_OP_BINARIA (>) : TIPO_BOOLEAN
+        │       ├── filho[0]: NO_IDENTIFICADOR (a) : TIPO_INT
+        │       └── filho[1]: NO_IDENTIFICADOR (b) : TIPO_INT
+        └── filho[3]: NO_DECL_VARIAVEL (d) : TIPO_BOOLEAN
+            └── filho[0]: NO_OP_BINARIA (||) : TIPO_BOOLEAN
+                ├── filho[0]: NO_LITERAL_BOOL (true) : TIPO_BOOLEAN
+                └── filho[1]: NO_LITERAL_BOOL (false) : TIPO_BOOLEAN
+
+Analise semantica de tipos concluida com sucesso.
