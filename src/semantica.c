@@ -84,7 +84,7 @@ const AssinaturaMetodo *obterAssinaturaMetodo(const char *nome) {
     return NULL;
 }
 
-TipoDado inferirTipoExpressao(const NoAST *no) {
+__attribute__((weak)) TipoDado inferirTipoExpressao(const NoAST *no) {
     if (!no) return TIPO_VOID;
     switch (no->tipo_no) {
         case NO_LITERAL_INT: return TIPO_INT;

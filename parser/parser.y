@@ -974,6 +974,7 @@ void yyerror(const char *mensagem) {
     fprintf(stderr, "Erro sintatico: na linha %d: %s\n", yylineno, mensagem);
 }
 
+#ifndef ANALISE_SEMANTICA
 int main(int argc, char **argv) {
     int executar_semantico = 0;
     for (int i = 1; i < argc; i++) {
@@ -984,7 +985,6 @@ int main(int argc, char **argv) {
     if (getenv("ANALISE_SEMANTICA") != NULL && strcmp(getenv("ANALISE_SEMANTICA"), "1") == 0) {
         executar_semantico = 1;
     }
-
     if (yyparse() == 0) {
         if (executar_semantico && arvore) {
             int sucesso = verificarEscopos(arvore);
@@ -1004,6 +1004,7 @@ int main(int argc, char **argv) {
     }
     return 1;
 }
+#endif
 /*
 
 abstract de fora

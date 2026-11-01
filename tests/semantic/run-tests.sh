@@ -239,6 +239,38 @@ if [[ -x "$BIN_PARSER" ]]; then
     fi
 fi
 
+BIN_SEMANTIC="$(resolve_bin "$BUILD_DIR/semantic")"
+
+if [[ -x "$BIN_SEMANTIC" ]]; then
+    echo
+    echo "=== Executando testes de Inferencia de Tipos (Issue 9.3) ==="
+
+    # 13. Teste positivo de inferencia mista int e double
+    saida="$(exec_bin "$BIN_SEMANTIC" < "$SEMANTIC_DIR/valido_inferencia_mista_int_double.java")"
+    status=$?
+    esperado="$(cat "$SEMANTIC_DIR/esperado/valido_inferencia_mista_int_double.txt")"
+    if [[ $status -eq 0 && "$saida" == "$esperado" ]]; then
+        printf '  [PASS] valido_inferencia_mista_int_double.java aceito e arvore tipada identica\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] valido_inferencia_mista_int_double.java falhou (status %d)\n' "$status"
+        diff <(printf '%s\n' "$saida") "$SEMANTIC_DIR/esperado/valido_inferencia_mista_int_double.txt" | head -20 | sed 's/^/         /'
+        ((falhou += 1))
+    fi
+
+    # 14. Teste negativo de tipo indeterminado
+    saida="$(exec_bin "$BIN_SEMANTIC" < "$SEMANTIC_DIR/invalido_tipo_indeterminado.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 4"* ]]; then
+        printf '  [PASS] invalido_tipo_indeterminado.java rejeitado corretamente na linha 4 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_tipo_indeterminado.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+fi
+
 echo
 printf 'Resumo Analise Semantica: %d passou, %d falhou.\n' "$passou" "$falhou"
 (( falhou == 0 ))

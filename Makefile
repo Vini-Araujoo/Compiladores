@@ -13,11 +13,17 @@ PARSER_GENERATED_C := $(BUILD_DIR)/parser.tab.c
 PARSER_GENERATED_H := $(BUILD_DIR)/parser.tab.h
 PARSER_BINARY := $(BUILD_DIR)/parser
 
-.PHONY: all parser test test-ast test-tabela test-semantic clean
+SEMANTIC_BINARY := $(BUILD_DIR)/semantic
+.PHONY: all parser semantic test test-ast test-tabela test-semantic clean
 
 all: parser
 
 parser: $(PARSER_BINARY)
+
+semantic: $(SEMANTIC_BINARY)
+
+$(SEMANTIC_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast.c src/ast.h src/inferencia.c src/inferencia.h src/main_semantico.c src/tabela.c src/tabela.h src/semantica.c src/semantica.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -DANALISE_SEMANTICA $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast.c src/tabela.c src/semantica.c src/inferencia.c src/main_semantico.c -o $@
 
 test: parser
 	@bash tests/parser/run-tests.sh $(ISSUE)
@@ -41,7 +47,7 @@ test-tabela: | $(BUILD_DIR)
 	@$(BUILD_DIR)/teste_busca_apos_fechamento_escopo
 	@echo "Todos os testes unitários da tabela de símbolos passaram com sucesso!"
 
-test-semantic: $(PARSER_BINARY) | $(BUILD_DIR)
+test-semantic: $(PARSER_BINARY) semantic | $(BUILD_DIR)
 	@$(CC) $(CFLAGS) -Isrc src/tabela.c tests/semantic/teste_pilha_escopos.c -o $(BUILD_DIR)/teste_pilha_escopos
 	@$(CC) $(CFLAGS) -Isrc src/tabela.c tests/semantic/teste_busca_apos_fechamento_escopo.c -o $(BUILD_DIR)/teste_busca_apos_fechamento_escopo
 	@$(CC) $(CFLAGS) -Isrc src/ast.c src/tabela.c src/semantica.c tests/semantic/teste_escopos_unitario.c -o $(BUILD_DIR)/teste_escopos_unitario
