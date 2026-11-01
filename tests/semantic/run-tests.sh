@@ -309,6 +309,46 @@ if [[ -x "$BIN_SEMANTIC" ]]; then
         printf '         Saida: %s\n' "$saida"
         ((falhou += 1))
     fi
+
+    echo
+    echo "=== Executando testes de Deteccao Estatica de Divisao por Zero (Issue 9.5) ==="
+
+    # 18. Teste positivo de divisao por variavel
+    saida="$(exec_bin "$BIN_SEMANTIC" < "$SEMANTIC_DIR/valido_divisao_por_variavel.java")"
+    status=$?
+    esperado="$(cat "$SEMANTIC_DIR/esperado/valido_divisao_por_variavel.txt")"
+    if [[ $status -eq 0 && "$saida" == "$esperado" ]]; then
+        printf '  [PASS] valido_divisao_por_variavel.java aceito e arvore tipada identica\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] valido_divisao_por_variavel.java falhou (status %d)\n' "$status"
+        diff <(printf '%s\n' "$saida") "$SEMANTIC_DIR/esperado/valido_divisao_por_variavel.txt" | head -20 | sed 's/^/         /'
+        ((falhou += 1))
+    fi
+
+    # 19. Teste negativo de divisao literal por zero
+    saida="$(exec_bin "$BIN_SEMANTIC" < "$SEMANTIC_DIR/invalido_divisao_literal_zero.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 4"* ]]; then
+        printf '  [PASS] invalido_divisao_literal_zero.java rejeitado corretamente na linha 4 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_divisao_literal_zero.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+
+    # 20. Teste negativo de modulo literal por zero
+    saida="$(exec_bin "$BIN_SEMANTIC" < "$SEMANTIC_DIR/invalido_modulo_literal_zero.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 4"* ]]; then
+        printf '  [PASS] invalido_modulo_literal_zero.java rejeitado corretamente na linha 4 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_modulo_literal_zero.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
 fi
 
 echo
