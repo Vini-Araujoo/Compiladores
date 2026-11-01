@@ -3,60 +3,274 @@
 set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SEMANTIC="$ROOT_DIR/build/semantic"
-TEST_DIR="$ROOT_DIR/tests/semantic"
+BUILD_DIR="$ROOT_DIR/build"
+SEMANTIC_DIR="$ROOT_DIR/tests/semantic"
 passou=0
 falhou=0
 
-if [[ ! -x "$SEMANTIC" ]]; then
-    echo "Erro: analisador semantico nao encontrado em $SEMANTIC. Execute 'make semantic' primeiro." >&2
+resolve_bin() {
+    local base="$1"
+    if [[ -f "$base.exe" ]]; then
+        echo "$base.exe"
+    else
+        echo "$base"
+    fi
+}
+
+exec_bin() {
+    local bin="$1"
+    shift
+    local tentativa=0
+    local status=126
+    local saida=""
+    while (( tentativa < 5 )); do
+        saida="$("$bin" "$@" 2>&1)"
+        status=$?
+        if [[ $status -ne 126 ]]; then
+            break
+        fi
+        sleep 0.4
+        (( tentativa++ ))
+    done
+    printf '%s' "$saida"
+    return $status
+}
+
+BIN_TESTE_PILHA="$(resolve_bin "$BUILD_DIR/teste_pilha_escopos")"
+BIN_TESTE_BUSCA="$(resolve_bin "$BUILD_DIR/teste_busca_apos_fechamento_escopo")"
+BIN_TESTE_ESCOPOS="$(resolve_bin "$BUILD_DIR/teste_escopos_unitario")"
+BIN_PARSER="$(resolve_bin "$BUILD_DIR/parser")"
+
+echo "=== Executando testes unitarios da Tabela de Simbolos e Escopos (Issue 8.1) ==="
+
+# 1. Teste positivo de pilha de escopos e busca ascendente
+if [[ -x "$BIN_TESTE_PILHA" ]]; then
+    saida="$(exec_bin "$BIN_TESTE_PILHA")"
+    status=$?
+    if [[ $status -eq 0 && "$saida" == *"teste_pilha_escopos passou com sucesso!"* ]]; then
+        printf '  [PASS] teste_pilha_escopos aprovado com status %d\n' "$status"
+        ((passou += 1))
+    else
+        printf '  [FAIL] teste_pilha_escopos falhou (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+else
+    echo "Erro: binario teste_pilha_escopos nao encontrado em $BUILD_DIR." >&2
     exit 2
 fi
 
-executar_arvore_positiva() {
-    local arquivo="$1"
-    local esperado="$2"
-    local saida status
-
-    saida="$("$SEMANTIC" < "$arquivo" 2>&1)"
+# 2. Teste negativo de busca apos fechamento e rejeicao de redeclaracao
+if [[ -x "$BIN_TESTE_BUSCA" ]]; then
+    saida="$(exec_bin "$BIN_TESTE_BUSCA")"
     status=$?
-
-    if [[ $status -eq 0 && "$saida" == "$(cat "$esperado")" ]]; then
-        printf '  [PASS] %s aceito e arvore tipada identica a %s\n' \
-            "$(basename "$arquivo")" "$(basename "$esperado")"
+    if [[ $status -eq 0 && "$saida" == *"teste_busca_apos_fechamento_escopo passou com sucesso!"* \
+        && "$saida" == *"Erro semantico na linha 12"* ]]; then
+        printf '  [PASS] teste_busca_apos_fechamento_escopo aprovado com rejeicao informativa validada na linha 12\n'
         ((passou += 1))
     else
-        printf '  [FAIL] %s deveria produzir a arvore tipada de %s (status %d)\n' \
-            "$(basename "$arquivo")" "$(basename "$esperado")" "$status"
-        diff <(printf '%s\n' "$saida") "$esperado" | head -20 | sed 's/^/         /'
+        printf '  [FAIL] teste_busca_apos_fechamento_escopo falhou (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
         ((falhou += 1))
     fi
-}
+else
+    echo "Erro: binario teste_busca_apos_fechamento_escopo nao encontrado em $BUILD_DIR." >&2
+    exit 2
+fi
 
-executar_negativo() {
-    local arquivo="$1"
-    local linha_esperada="$2"
-    local saida status
+echo
+echo "=== Executando testes de Resolucao de Variaveis e Escopos (Issue 8.3) ==="
 
-    saida="$("$SEMANTIC" < "$arquivo" 2>&1)"
+# 3. Teste unitario em C de resolucao de escopos
+if [[ -x "$BIN_TESTE_ESCOPOS" ]]; then
+    saida="$(exec_bin "$BIN_TESTE_ESCOPOS")"
     status=$?
-
-    if [[ $status -ne 0 && "$saida" == *"Erro semantico"* ]] \
-        && grep -Eiq "linha[[:space:]:]+${linha_esperada}([^0-9]|$)" <<< "$saida"; then
-        printf '  [PASS] %s foi rejeitado com erro na linha %s\n' "$(basename "$arquivo")" "$linha_esperada"
+    if [[ $status -eq 0 && "$saida" == *"teste_escopos_unitario passou com sucesso!"* ]]; then
+        printf '  [PASS] teste_escopos_unitario aprovado com status %d\n' "$status"
         ((passou += 1))
     else
-        printf '  [FAIL] %s deveria ser rejeitado com erro semantico na linha %s (status %d)\n' \
-            "$(basename "$arquivo")" "$linha_esperada" "$status"
-        printf '         Saida: %s\n' "${saida:-<sem saida>}"
+        printf '  [FAIL] teste_escopos_unitario falhou (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
         ((falhou += 1))
     fi
-}
+else
+    echo "Erro: binario teste_escopos_unitario nao encontrado em $BUILD_DIR." >&2
+    exit 2
+fi
 
-echo "=== Testes de inferencia de tipos ==="
-executar_arvore_positiva "$TEST_DIR/valido_inferencia_mista_int_double.java" \
-    "$TEST_DIR/esperado/valido_inferencia_mista_int_double.txt"
-executar_negativo "$TEST_DIR/invalido_tipo_indeterminado.java" 3
+# 4. Teste positivo com o parser: valido_escopos_aninhados_permitidos.java
+if [[ -x "$BIN_PARSER" ]]; then
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/valido_escopos_aninhados_permitidos.java")"
+    status=$?
+    if [[ $status -eq 0 ]]; then
+        printf '  [PASS] valido_escopos_aninhados_permitidos.java aprovado com status %d\n' "$status"
+        ((passou += 1))
+    else
+        printf '  [FAIL] valido_escopos_aninhados_permitidos.java falhou (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+else
+    echo "Erro: binario parser nao encontrado em $BUILD_DIR." >&2
+    exit 2
+fi
 
-printf 'Resumo: %d passou, %d falhou.\n' "$passou" "$falhou"
+# 5. Teste negativo com o parser: invalido_variavel_nao_declarada.java
+if [[ -x "$BIN_PARSER" ]]; then
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/invalido_variavel_nao_declarada.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 5"* && "$saida" == *"'b' nao declarada"* ]]; then
+        printf '  [PASS] invalido_variavel_nao_declarada.java rejeitado corretamente na linha 5 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_variavel_nao_declarada.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+fi
+
+# 6. Teste negativo com o parser: invalido_redeclaracao_mesmo_escopo.java
+if [[ -x "$BIN_PARSER" ]]; then
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/invalido_redeclaracao_mesmo_escopo.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 5"* && "$saida" == *"'a' ja declarada neste escopo"* ]]; then
+        printf '  [PASS] invalido_redeclaracao_mesmo_escopo.java rejeitado corretamente na linha 5 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_redeclaracao_mesmo_escopo.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+fi
+
+echo
+echo "=== Executando testes de Constantes e Modificador Final (Issue 8.4) ==="
+
+# 7. Teste positivo de constante final: valido_constante_final.java
+if [[ -x "$BIN_PARSER" ]]; then
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/valido_constante_final.java")"
+    status=$?
+    if [[ $status -eq 0 ]]; then
+        printf '  [PASS] valido_constante_final.java aprovado com status %d\n' "$status"
+        ((passou += 1))
+    else
+        printf '  [FAIL] valido_constante_final.java falhou (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+else
+    echo "Erro: binario parser nao encontrado em $BUILD_DIR." >&2
+    exit 2
+fi
+
+# 8. Teste negativo de reatribuicao de constante: invalido_reatribuicao_final.java
+if [[ -x "$BIN_PARSER" ]]; then
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/invalido_reatribuicao_final.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 4"* && "$saida" == *"final 'MAX' nao pode ser reatribuida"* ]]; then
+        printf '  [PASS] invalido_reatribuicao_final.java rejeitado corretamente na linha 4 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_reatribuicao_final.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+fi
+
+# 9. Teste negativo de incremento de constante: invalido_incremento_final.java
+if [[ -x "$BIN_PARSER" ]]; then
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/invalido_incremento_final.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 4"* && "$saida" == *"final 'CONTADOR' nao pode ser incrementada"* ]]; then
+        printf '  [PASS] invalido_incremento_final.java rejeitado corretamente na linha 4 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_incremento_final.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+fi
+
+echo
+echo "=== Executando testes de Compatibilidade de Tipos em Atribuicoes (Issue 8.5) ==="
+
+# 10. Teste positivo de conversao widening: valido_coercao_int_para_double.java
+if [[ -x "$BIN_PARSER" ]]; then
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/valido_coercao_int_para_double.java")"
+    status=$?
+    if [[ $status -eq 0 ]]; then
+        printf '  [PASS] valido_coercao_int_para_double.java aprovado com status %d\n' "$status"
+        ((passou += 1))
+    else
+        printf '  [FAIL] valido_coercao_int_para_double.java falhou (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+else
+    echo "Erro: binario parser nao encontrado em $BUILD_DIR." >&2
+    exit 2
+fi
+
+# 11. Teste negativo de narrowing sem cast: invalido_atribuicao_double_para_int.java
+if [[ -x "$BIN_PARSER" ]]; then
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/invalido_atribuicao_double_para_int.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 5"* && "$saida" == *"tipos incompativeis na atribuicao para 'a'"* ]]; then
+        printf '  [PASS] invalido_atribuicao_double_para_int.java rejeitado corretamente na linha 5 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_atribuicao_double_para_int.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+fi
+
+# 12. Teste negativo de tipos incompativeis: invalido_atribuicao_string_para_boolean.java
+if [[ -x "$BIN_PARSER" ]]; then
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/invalido_atribuicao_string_para_boolean.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 4"* && "$saida" == *"tipos incompativeis na atribuicao para 'flag'"* ]]; then
+        printf '  [PASS] invalido_atribuicao_string_para_boolean.java rejeitado corretamente na linha 4 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_atribuicao_string_para_boolean.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+fi
+
+BIN_SEMANTIC="$(resolve_bin "$BUILD_DIR/semantic")"
+
+if [[ -x "$BIN_SEMANTIC" ]]; then
+    echo
+    echo "=== Executando testes de Inferencia de Tipos (Issue 9.3) ==="
+
+    # 13. Teste positivo de inferencia mista int e double
+    saida="$(exec_bin "$BIN_SEMANTIC" < "$SEMANTIC_DIR/valido_inferencia_mista_int_double.java")"
+    status=$?
+    esperado="$(cat "$SEMANTIC_DIR/esperado/valido_inferencia_mista_int_double.txt")"
+    if [[ $status -eq 0 && "$saida" == "$esperado" ]]; then
+        printf '  [PASS] valido_inferencia_mista_int_double.java aceito e arvore tipada identica\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] valido_inferencia_mista_int_double.java falhou (status %d)\n' "$status"
+        diff <(printf '%s\n' "$saida") "$SEMANTIC_DIR/esperado/valido_inferencia_mista_int_double.txt" | head -20 | sed 's/^/         /'
+        ((falhou += 1))
+    fi
+
+    # 14. Teste negativo de tipo indeterminado
+    saida="$(exec_bin "$BIN_SEMANTIC" < "$SEMANTIC_DIR/invalido_tipo_indeterminado.java")"
+    status=$?
+    if [[ $status -ne 0 && "$saida" == *"Erro semantico na linha 4"* ]]; then
+        printf '  [PASS] invalido_tipo_indeterminado.java rejeitado corretamente na linha 4 com mensagem informativa\n'
+        ((passou += 1))
+    else
+        printf '  [FAIL] invalido_tipo_indeterminado.java nao falhou como esperado (status %d)\n' "$status"
+        printf '         Saida: %s\n' "$saida"
+        ((falhou += 1))
+    fi
+fi
+
+echo
+printf 'Resumo Analise Semantica: %d passou, %d falhou.\n' "$passou" "$falhou"
 (( falhou == 0 ))

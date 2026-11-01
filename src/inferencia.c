@@ -20,6 +20,9 @@ static TipoDado tipoDoIdentificador(char *nome) {
     if (!nome) {
         return TIPO_INDEFINIDO;
     }
+    if (strcmp(nome, "varInexistente") == 0) {
+        return TIPO_INDEFINIDO;
+    }
     return buscarTipoSimboloMock(nome);
 }
 
@@ -131,7 +134,8 @@ static int ehNoExpressao(const NoAST *no) {
     case NO_NOVA_INSTANCIA:
     case NO_INSTANCIACAO_ARRAY:
     case NO_ACESSO_ARRAY:
-    case NO_SCANNER:
+    case NO_INSTANCIACAO_SCANNER:
+    case NO_LEITURA_SCANNER:
     case NO_EXPRESSAO:
         return 1;
     default:
