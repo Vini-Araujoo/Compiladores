@@ -19,6 +19,9 @@ typedef struct {
 
 #define MODIFICADORES_PADRAO ((Modificadores){0, 0, 0, 0, 0})
 
+/* Alias para compatibilidade com especificacoes que utilizam is_final */
+#define is_final eh_final
+
 /*
  * Estrutura do Simbolo na Tabela de Simbolos.
  */
@@ -26,6 +29,7 @@ typedef struct Simbolo {
     char *nome;
     TipoDado tipo;
     Modificadores mods;
+    int eh_final;            /* Flag de constante final (acessivel via simb->eh_final ou simb->is_final) */
     int linha;
     struct Simbolo *proximo; /* Lista encadeada para colisao na hash ou encadeamento */
 } Simbolo;

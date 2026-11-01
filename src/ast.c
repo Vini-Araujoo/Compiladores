@@ -16,6 +16,7 @@ NoAST *criarNo(TipoNoAST tipo, int linha) {
     no->tipo_dado = TIPO_VOID;
     no->linha = linha;
     no->posfixo = 0;
+    no->mods = MODIFICADORES_PADRAO;
     no->simbolo = NULL;
     no->num_filhos = 0;
     no->capacidade = CAPACIDADE_INICIAL_FILHOS;

@@ -45,9 +45,6 @@ test-semantic: $(PARSER_BINARY) | $(BUILD_DIR)
 	@$(CC) $(CFLAGS) -Isrc src/tabela.c tests/semantic/teste_pilha_escopos.c -o $(BUILD_DIR)/teste_pilha_escopos
 	@$(CC) $(CFLAGS) -Isrc src/tabela.c tests/semantic/teste_busca_apos_fechamento_escopo.c -o $(BUILD_DIR)/teste_busca_apos_fechamento_escopo
 	@$(CC) $(CFLAGS) -Isrc src/ast.c src/tabela.c src/semantica.c tests/semantic/teste_escopos_unitario.c -o $(BUILD_DIR)/teste_escopos_unitario
-	@$(BUILD_DIR)/teste_pilha_escopos
-	@$(BUILD_DIR)/teste_busca_apos_fechamento_escopo
-	@$(BUILD_DIR)/teste_escopos_unitario
 	@bash tests/semantic/run-tests.sh
 	@echo "Todos os testes semânticos passaram com sucesso!"
 

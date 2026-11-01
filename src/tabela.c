@@ -71,6 +71,7 @@ int inserirSimbolo(char *nome, TipoDado tipo, Modificadores mods, int linha) {
     novo->nome = strdup(nome);
     novo->tipo = tipo;
     novo->mods = mods;
+    novo->eh_final = mods.eh_final;
     novo->linha = linha;
     novo->proximo = escopo_atual->tabela[indice];
     escopo_atual->tabela[indice] = novo;
