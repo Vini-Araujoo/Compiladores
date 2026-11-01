@@ -23,7 +23,8 @@ typedef enum {
     NO_METODO,
     NO_PARAMETROS,
     NO_PARAMETRO,
-    NO_VAR_DECL,
+    NO_DECL_VARIAVEL,
+#define NO_VAR_DECL NO_DECL_VARIAVEL
     NO_BLOCO,
 
     NO_IF,
@@ -45,7 +46,8 @@ typedef enum {
     NO_ATRIBUICAO,
     NO_PRINT,
     NO_PRINTLN,
-    NO_SCANNER,
+    NO_INSTANCIACAO_SCANNER,
+    NO_LEITURA_SCANNER,
 
     NO_OP_BINARIA,
     NO_OP_UNARIA,
@@ -59,6 +61,7 @@ typedef enum {
     NO_THEN,
 
     NO_IDENTIFICADOR,
+#define NO_ID NO_IDENTIFICADOR
     NO_LITERAL_INT,
     NO_LITERAL_FLOAT,
     NO_LITERAL_DOUBLE,

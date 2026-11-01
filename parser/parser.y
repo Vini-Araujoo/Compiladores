@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../src/ast.h"
+#include "../src/tabela.h"
+#include "../src/semantica.h"
 
 int yylex(void);
 void yyerror(const char *mensagem);
@@ -86,6 +88,30 @@ static NoAST *cria_no_expressao_generica(NoAST *filho1, NoAST *filho2) {
     }
     return no;
 }
+
+static NoAST *cria_no_atribuicao(const char *operador, NoAST *alvo, NoAST *expressao) {
+    NoAST *no = criarNo(NO_ATRIBUICAO, alvo ? alvo->linha : yylineno);
+    if (operador) {
+        strncpy(no->valor.operador, operador, sizeof(no->valor.operador) - 1);
+        no->valor.operador[sizeof(no->valor.operador) - 1] = '\0';
+    }
+    adicionarFilho(no, alvo);
+    adicionarFilho(no, expressao);
+    return no;
+}
+
+static void adicionar_declaracoes_a_pai(NoAST *pai, NoAST *decls) {
+    if (!pai || !decls) return;
+    if (decls->tipo_no == NO_DECL_VARIAVEL && decls->valor.valor_str == NULL) {
+        for (int i = 0; i < decls->num_filhos; i++) {
+            adicionarFilho(pai, decls->filhos[i]);
+        }
+        free(decls->filhos);
+        free(decls);
+    } else {
+        adicionarFilho(pai, decls);
+    }
+}
 %}
 
 // primitivos
@@ -94,6 +120,7 @@ static NoAST *cria_no_expressao_generica(NoAST *filho1, NoAST *filho2) {
 %token <text> ID
 %token <inteiro> NUMERO
 %token <real> NUMERO_DOUBLE
+%token <text> TOKEN_STRING_LITERAL
 %token TOKEN_INT
 %token TOKEN_LONG
 %token TOKEN_BOOLEAN
@@ -207,12 +234,14 @@ static NoAST *cria_no_expressao_generica(NoAST *filho1, NoAST *filho2) {
 
 %code requires {
     #include "../src/ast.h"
+    #include "../src/tabela.h"
 }
 
 %union {
     NoAST *no;
     char *text;
     TipoDado tipo_dado;
+    Modificadores mods;
     long inteiro;
     double real;
 }
@@ -221,15 +250,18 @@ static NoAST *cria_no_expressao_generica(NoAST *filho1, NoAST *filho2) {
 
 %type <no> programa declaracao_classe corpo_classe membro_classe
 %type <no> bloco comando lista_comandos condicional condicao comando_if
-%type <no> declaracao_local atribuicao comando_io repeticao comando_salto
-%type <no> expressao comando_return comando_switch casos_switch case_switch
+%type <no> declaracao_local declaracao_variavel lista_declaracoes item_declaracao
+%type <no> atribuicao comando_io repeticao comando_salto
+%type <no> expressao expressao_sintatica comando_return comando_switch casos_switch case_switch
 %type <no> default_switch declaracao_metodo comando_print argumento_opcional
-%type <no> acesso_array expressao_sintatica leitura_scanner chamada_metodo
+%type <no> acesso_array leitura_scanner chamada_metodo
 %type <no> instanciacao
+%type <text> metodo_scanner
 %type <no> atribuicao_for condicao_for incremento_for
 %type <no> comando_for comando_do_while comando_while
 %type <tipo_dado> tipo_base
 %type <tipo_dado> tipo
+%type <mods> modificadores modificador modificador_variavel
 %type <no> lista_parametros parametros_com_virgula parametro
 %%
 
@@ -260,13 +292,13 @@ corpo_classe:
       %empty { $$ = criarNo(NO_CLASSE, 0); }
       | corpo_classe membro_classe 
         {
-            adicionarFilho($1, $2);
+            adicionar_declaracoes_a_pai($1, $2);
             $$ = $1;
         }
     ;
 
 membro_classe:
-      declaracao_variavel { $$ = criarNo(NO_VAR_DECL, 0); }
+      declaracao_variavel { $$ = $1; }
       | declaracao_metodo { $$ = $1; }
     ;
 
@@ -274,21 +306,15 @@ membro_classe:
 declaracao_metodo:
   modificadores tipo ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
     {
-        //free($3);
-        //$$ = criarNo(NO_METODO, 0);
-        //adicionarFilho($$, $7);
-
         $$ = cria_no_instancia_id(NO_METODO, $2, $3);
+        $$->mods = $1;
         adicionarFilho($$, $5);
         adicionarFilho($$, $7);
     }
     | modificadores TOKEN_VOID ID TOKEN_ABRE_PAR lista_parametros TOKEN_FECHA_PAR bloco
     {
-        //free($3);
-        //$$ = criarNo(NO_METODO, 0);
-        //adicionarFilho($$, $7);
-        
         $$ = cria_no_instancia_id(NO_METODO, TIPO_VOID, $3);
+        $$->mods = $1;
         adicionarFilho($$, $5);
         adicionarFilho($$, $7);
     }
@@ -323,26 +349,75 @@ parametro:
         {
             $$ = cria_no_instancia_id(NO_PARAMETRO, $1, $2);
         }
+      | TOKEN_FINAL tipo ID
+        {
+            $$ = cria_no_instancia_id(NO_PARAMETRO, $2, $3);
+            $$->mods.eh_final = 1;
+            $$->mods.is_final = 1;
+        }
       | tipo TOKEN_ABRE_COLCHETE TOKEN_FECHA_COLCHETE ID
         {
             $$ = cria_no_instancia_id(NO_PARAMETRO, TIPO_ARRAY, $4);
+        }
+      | TOKEN_FINAL tipo TOKEN_ABRE_COLCHETE TOKEN_FECHA_COLCHETE ID
+        {
+            $$ = cria_no_instancia_id(NO_PARAMETRO, TIPO_ARRAY, $5);
+            $$->mods.eh_final = 1;
+            $$->mods.is_final = 1;
         }
     ;
 
 modificadores:
         %empty
+        {
+            $$ = MODIFICADORES_PADRAO;
+        }
       | modificadores modificador
+        {
+            $$ = $1;
+            if ($2.eh_public) $$.eh_public = 1;
+            if ($2.eh_private) $$.eh_private = 1;
+            if ($2.eh_protected) $$.eh_protected = 1;
+            if ($2.eh_static) $$.eh_static = 1;
+            if ($2.eh_final || $2.is_final) {
+                $$.eh_final = 1;
+                $$.is_final = 1;
+            }
+        }
     ; 
     
 modificador:
         TOKEN_PUBLIC
+        {
+            $$ = MODIFICADORES_PADRAO;
+            $$.eh_public = 1;
+        }
       | TOKEN_PRIVATE
+        {
+            $$ = MODIFICADORES_PADRAO;
+            $$.eh_private = 1;
+        }
       | TOKEN_PROTECTED
+        {
+            $$ = MODIFICADORES_PADRAO;
+            $$.eh_protected = 1;
+        }
       | TOKEN_STATIC
+        {
+            $$ = MODIFICADORES_PADRAO;
+            $$.eh_static = 1;
+        }
       | TOKEN_FINAL
+        {
+            $$ = MODIFICADORES_PADRAO;
+            $$.eh_final = 1;
+            $$.is_final = 1;
+        }
     ;
 tipo:
-        TOKEN_DOUBLE
+        TOKEN_BYTE
+        {$$ = TIPO_BYTE; }
+      | TOKEN_DOUBLE
         {$$ = TIPO_DOUBLE; }
       | TOKEN_INT
         {$$ = TIPO_INT; }
@@ -363,24 +438,59 @@ tipo:
     ;
 
 
-//Atributos da classe (STUB da Issue 1)
+// Declaracoes de variaveis da classe e locais
 declaracao_variavel:
         modificadores tipo lista_declaracoes TOKEN_PTOVIRG
+        {
+            for (int i = 0; i < $3->num_filhos; i++) {
+                if ($3->filhos[i]) {
+                    $3->filhos[i]->tipo_dado = $2;
+                    $3->filhos[i]->mods = $1;
+                }
+            }
+            $3->mods = $1;
+            $$ = $3;
+        }
       ;
 
 lista_declaracoes:
         item_declaracao
+        {
+            $$ = criarNo(NO_DECL_VARIAVEL, yylineno);
+            adicionarFilho($$, $1);
+        }
       | lista_declaracoes TOKEN_VIRGULA item_declaracao
+        {
+            adicionarFilho($1, $3);
+            $$ = $1;
+        }
       ;
 
 item_declaracao:
         ID
+        {
+            $$ = criarNo(NO_DECL_VARIAVEL, yylineno);
+            $$->valor.valor_str = $1;
+        }
       | ID TOKEN_ATRIB expressao
+        {
+            $$ = criarNo(NO_DECL_VARIAVEL, yylineno);
+            $$->valor.valor_str = $1;
+            adicionarFilho($$, $3);
+        }
       ;
 
 modificador_variavel:
         %empty
+        {
+            $$ = MODIFICADORES_PADRAO;
+        }
       | TOKEN_FINAL
+        {
+            $$ = MODIFICADORES_PADRAO;
+            $$.eh_final = 1;
+            $$.is_final = 1;
+        }
       ;
 
 // (STUB da Issue 3 apenas abre e fecha chaves por enquanto)
@@ -395,7 +505,7 @@ lista_comandos:
         }
     | lista_comandos comando 
     { 
-        adicionarFilho($1, $2); 
+        adicionar_declaracoes_a_pai($1, $2); 
         $$ = $1;
     }
     ;
@@ -472,6 +582,12 @@ expressao_sintatica:
         { $$ = cria_no_literal_bool(1); }
     | TOKEN_FALSE
         { $$ = cria_no_literal_bool(0); }
+    | TOKEN_STRING_LITERAL
+        {
+            $$ = criarNo(NO_LITERAL_STRING, yylineno);
+            $$->tipo_dado = TIPO_STRING;
+            $$->valor.valor_str = $1;
+        }
     | acesso_array { $$ = $1; }
     | leitura_scanner { $$ = $1; }
     | chamada_metodo { $$ = $1; }
@@ -480,67 +596,73 @@ expressao_sintatica:
 
 declaracao_local:
       modificador_variavel tipo lista_declaracoes TOKEN_PTOVIRG
-        { $$ = criarNo(NO_VAR_DECL, 0); }
+        {
+            for (int i = 0; i < $3->num_filhos; i++) {
+                if ($3->filhos[i]) {
+                    $3->filhos[i]->tipo_dado = $2;
+                    $3->filhos[i]->mods = $1;
+                }
+            }
+            $3->mods = $1;
+            $$ = $3;
+        }
     ;
 
 atribuicao:
       ID TOKEN_ATRIB expressao TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_ATRIBUICAO, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
-            id->valor.valor_str = $1;
-            adicionarFilho($$, id);
-            adicionarFilho($$, $3);
+            NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+            $$ = cria_no_atribuicao("=", id, $3);
         }
     | acesso_array TOKEN_ATRIB expressao TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_ATRIBUICAO, 0);
-            adicionarFilho($$, $1);
-            adicionarFilho($$, $3);
+            $$ = cria_no_atribuicao("=", $1, $3);
         }
     | TOKEN_INCREMENTO ID TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_INCREMENTO_ANTES, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            $$ = criarNo(NO_INCREMENTO_ANTES, yylineno);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
             id->valor.valor_str = $2;
             adicionarFilho($$, id);
         }
     | TOKEN_DECREMENTO ID TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_DECREMENTO_ANTES, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            $$ = criarNo(NO_DECREMENTO_ANTES, yylineno);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
             id->valor.valor_str = $2;
             adicionarFilho($$, id);
         }
     | ID TOKEN_INCREMENTO TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_INCREMENTO, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            $$ = criarNo(NO_INCREMENTO, yylineno);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
             id->valor.valor_str = $1;
             adicionarFilho($$, id);
         }
     | ID TOKEN_DECREMENTO TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_DECREMENTO, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+            $$ = criarNo(NO_DECREMENTO, yylineno);
+            NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
             id->valor.valor_str = $1;
             adicionarFilho($$, id);
         }
     | ID TOKEN_SOMA_ATRIB expressao TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_ATRIBUICAO, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
-            id->valor.valor_str = $1;
-            adicionarFilho($$, id);
-            adicionarFilho($$, $3);
+            NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+            $$ = cria_no_atribuicao("+=", id, $3);
         }
     | ID TOKEN_SUB_ATRIB expressao TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_ATRIBUICAO, 0);
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
-            id->valor.valor_str = $1;
-            adicionarFilho($$, id);
-            adicionarFilho($$, $3);
+            NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+            $$ = cria_no_atribuicao("-=", id, $3);
+        }
+    | acesso_array TOKEN_SOMA_ATRIB expressao TOKEN_PTOVIRG
+        {
+            $$ = cria_no_atribuicao("+=", $1, $3);
+        }
+    | acesso_array TOKEN_SUB_ATRIB expressao TOKEN_PTOVIRG
+        {
+            $$ = cria_no_atribuicao("-=", $1, $3);
         }
     ;
 
@@ -555,13 +677,15 @@ comando_print:
       TOKEN_SYSTEM TOKEN_PONTO TOKEN_OUT TOKEN_PONTO TOKEN_PRINTLN
       TOKEN_ABRE_PAR argumento_opcional TOKEN_FECHA_PAR TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_PRINTLN, 0);
-            adicionarFilho($$, $7);
+            $$ = criarNo(NO_PRINTLN, yylineno);
+            if ($7 != NULL) {
+                adicionarFilho($$, $7);
+            }
         }
     | TOKEN_SYSTEM TOKEN_PONTO TOKEN_OUT TOKEN_PONTO TOKEN_PRINT
       TOKEN_ABRE_PAR expressao TOKEN_FECHA_PAR TOKEN_PTOVIRG
         {
-            $$ = criarNo(NO_PRINT, 0);
+            $$ = criarNo(NO_PRINT, yylineno);
             adicionarFilho($$, $7);
         }
     ;
@@ -575,7 +699,7 @@ instanciacao:
       TOKEN_NEW TOKEN_SCANNER TOKEN_ABRE_PAR TOKEN_SYSTEM TOKEN_PONTO
       TOKEN_IN TOKEN_FECHA_PAR
         {
-            $$ = criarNo(NO_SCANNER, yylineno);
+            $$ = criarNo(NO_INSTANCIACAO_SCANNER, yylineno);
             $$->tipo_dado = TIPO_SCANNER;
         }
     | TOKEN_NEW tipo_base TOKEN_ABRE_COLCHETE expressao TOKEN_FECHA_COLCHETE
@@ -605,19 +729,27 @@ acesso_array:
 
 leitura_scanner:
       ID TOKEN_PONTO metodo_scanner TOKEN_ABRE_PAR TOKEN_FECHA_PAR
-        { free($1); $$ = cria_no_expressao_generica(NULL, NULL); }
+        {
+            NoAST *variavel = criarNo(NO_IDENTIFICADOR, yylineno);
+            variavel->tipo_dado = TIPO_SCANNER;
+            variavel->valor.valor_str = $1;
+
+            $$ = criarNo(NO_LEITURA_SCANNER, yylineno);
+            $$->valor.valor_str = $3;
+            adicionarFilho($$, variavel);
+        }
     ;
 
 metodo_scanner:
-      TOKEN_NEXT
-    | TOKEN_NEXT_LINE
-    | TOKEN_NEXT_INT
-    | TOKEN_NEXT_DOUBLE
-    | TOKEN_NEXT_FLOAT
-    | TOKEN_NEXT_LONG
-    | TOKEN_NEXT_SHORT
-    | TOKEN_NEXT_BYTE
-    | TOKEN_NEXT_BOOLEAN
+      TOKEN_NEXT { $$ = strdup("next"); }
+    | TOKEN_NEXT_LINE { $$ = strdup("nextLine"); }
+    | TOKEN_NEXT_INT { $$ = strdup("nextInt"); }
+    | TOKEN_NEXT_DOUBLE { $$ = strdup("nextDouble"); }
+    | TOKEN_NEXT_FLOAT { $$ = strdup("nextFloat"); }
+    | TOKEN_NEXT_LONG { $$ = strdup("nextLong"); }
+    | TOKEN_NEXT_SHORT { $$ = strdup("nextShort"); }
+    | TOKEN_NEXT_BYTE { $$ = strdup("nextByte"); }
+    | TOKEN_NEXT_BOOLEAN { $$ = strdup("nextBoolean"); }
     ;
 
 chamada_metodo:
@@ -729,13 +861,24 @@ atribuicao_for:
       TOKEN_PTOVIRG { $$ = NULL; }
     | ID TOKEN_ATRIB expressao TOKEN_PTOVIRG 
         { 
-            $$ = criarNo(NO_ATRIBUICAO, 0); 
-            NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
-            id->valor.valor_str = $1;
-            adicionarFilho($$, id);
-            adicionarFilho($$, $3);
+            NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+            $$ = cria_no_atribuicao("=", id, $3);
         }
-    | declaracao_local { $$ = $1; }
+    | declaracao_local 
+        { 
+            if ($1 && $1->tipo_no == NO_DECL_VARIAVEL && $1->valor.valor_str == NULL) {
+                if ($1->num_filhos == 1) {
+                    NoAST *unico = $1->filhos[0];
+                    free($1->filhos);
+                    free($1);
+                    $$ = unico;
+                } else {
+                    $$ = $1;
+                }
+            } else {
+                $$ = $1;
+            }
+        }
     ;
 
 condicao_for:
@@ -747,37 +890,44 @@ incremento_for:
       %empty { $$ = NULL; }
     | ID TOKEN_ATRIB expressao 
     { 
-        $$ = criarNo(NO_ATRIBUICAO, 0);
-        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
-        id->valor.valor_str = $1;
-        adicionarFilho($$, id);
-        adicionarFilho($$, $3);
+        NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+        $$ = cria_no_atribuicao("=", id, $3);
+    }
+    | ID TOKEN_SOMA_ATRIB expressao
+    {
+        NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+        $$ = cria_no_atribuicao("+=", id, $3);
+    }
+    | ID TOKEN_SUB_ATRIB expressao
+    {
+        NoAST *id = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1);
+        $$ = cria_no_atribuicao("-=", id, $3);
     }
     | ID TOKEN_INCREMENTO
     {
-        $$ = criarNo(NO_INCREMENTO, 0);
-        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        $$ = criarNo(NO_INCREMENTO, yylineno);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
         id->valor.valor_str = $1;
         adicionarFilho($$, id);
     }
     | ID TOKEN_DECREMENTO
     {
-        $$ = criarNo(NO_DECREMENTO, 0);
-        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        $$ = criarNo(NO_DECREMENTO, yylineno);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
         id->valor.valor_str = $1;
         adicionarFilho($$, id);
     }
     | TOKEN_INCREMENTO ID
     {
-        $$ = criarNo(NO_INCREMENTO_ANTES, 0);
-        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        $$ = criarNo(NO_INCREMENTO_ANTES, yylineno);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
         id->valor.valor_str = $2;
         adicionarFilho($$, id);
     }
     | TOKEN_DECREMENTO ID
     {
-        $$ = criarNo(NO_DECREMENTO_ANTES, 0);
-        NoAST *id = criarNo(NO_IDENTIFICADOR, 0);
+        $$ = criarNo(NO_DECREMENTO_ANTES, yylineno);
+        NoAST *id = criarNo(NO_IDENTIFICADOR, yylineno);
         id->valor.valor_str = $2;
         adicionarFilho($$, id);
     }
@@ -821,17 +971,35 @@ comando_while:
 %%
 
 void yyerror(const char *mensagem) {
-    fprintf(stderr, "Erro sintatico na linha %d: %s\n", yylineno, mensagem);
+    fprintf(stderr, "Erro sintatico: na linha %d: %s\n", yylineno, mensagem);
 }
 
 #ifndef ANALISE_SEMANTICA
-int main(void) {
+int main(int argc, char **argv) {
+    int executar_semantico = 0;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--semantico") == 0 || strcmp(argv[i], "-s") == 0) {
+            executar_semantico = 1;
+        }
+    }
+    if (getenv("ANALISE_SEMANTICA") != NULL && strcmp(getenv("ANALISE_SEMANTICA"), "1") == 0) {
+        executar_semantico = 1;
+    }
     if (yyparse() == 0) {
+        if (executar_semantico && arvore) {
+            int sucesso = verificarEscopos(arvore);
+            if (!sucesso) {
+                liberarAST(arvore);
+                liberarTabelaSimbolos();
+                return 1;
+            }
+        }
         if (arvore) {
             imprimirAST(arvore);
         }
         printf("\nAnalise sintatica concluida com sucesso.\n");
         liberarAST(arvore);
+        liberarTabelaSimbolos();
         return 0;
     }
     return 1;

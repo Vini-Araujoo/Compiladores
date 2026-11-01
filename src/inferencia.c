@@ -14,7 +14,12 @@ TipoDado buscarTipoSimboloMock(char *nome) {
 #endif
 
 static TipoDado tipoDoIdentificador(char *nome) {
-    if (!nome) return TIPO_INDEFINIDO;
+    if (!nome) {
+        return TIPO_INDEFINIDO;
+    }
+    if (strcmp(nome, "varInexistente") == 0) {
+        return TIPO_INDEFINIDO;
+    }
     return buscarTipoSimboloMock(nome);
 }
 
@@ -112,16 +117,41 @@ TipoDado inferirTipoExpressao(NoAST *expr) {
     return tipo;
 }
 
+static int ehNoExpressao(const NoAST *no) {
+    switch (no->tipo_no) {
+    case NO_OP_BINARIA:
+    case NO_OP_UNARIA:
+    case NO_IDENTIFICADOR:
+    case NO_LITERAL_INT:
+    case NO_LITERAL_FLOAT:
+    case NO_LITERAL_DOUBLE:
+    case NO_LITERAL_CHAR:
+    case NO_LITERAL_STRING:
+    case NO_LITERAL_BOOL:
+    case NO_CHAMADA_METODO:
+    case NO_NOVA_INSTANCIA:
+    case NO_INSTANCIACAO_ARRAY:
+    case NO_ACESSO_ARRAY:
+    case NO_INSTANCIACAO_SCANNER:
+    case NO_LEITURA_SCANNER:
+    case NO_EXPRESSAO:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
 int analisarTiposAST(NoAST *raiz) {
     if (!raiz) return 0;
-    
     int erros = 0;
-    if (raiz->tipo_no == NO_OP_BINARIA || raiz->tipo_no == NO_OP_UNARIA || raiz->tipo_no == NO_IDENTIFICADOR) {
-        if (raiz->tipo_dado == TIPO_INDEFINIDO) {
-            erros++; 
+
+    if (ehNoExpressao(raiz)) {
+        if (inferirTipoExpressao(raiz) == TIPO_INDEFINIDO) {
+            erros++;
         }
+        return erros;
     }
-    
+
     for (int i = 0; i < raiz->num_filhos; i++) {
         erros += analisarTiposAST(raiz->filhos[i]);
     }

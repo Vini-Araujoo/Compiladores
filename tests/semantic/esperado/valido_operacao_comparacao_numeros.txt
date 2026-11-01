@@ -1,22 +1,19 @@
-NO_PROGRAMA
-└── NO_CLASSE (TestePositivo)
-    └── NO_METODO (main)
-        ├── NO_PARAMETROS
-        │   └── NO_PARAMETRO (args)
-        └── NO_BLOCO
-            ├── NO_VAR_DECL
-            │   ├── NO_IDENTIFICADOR (a) : TIPO_INT
-            │   └── NO_LITERAL_INT (10) : TIPO_INT
-            ├── NO_VAR_DECL
-            │   ├── NO_IDENTIFICADOR (b) : TIPO_INT
-            │   └── NO_LITERAL_DOUBLE (5.5) : TIPO_DOUBLE
-            ├── NO_VAR_DECL
-            │   ├── NO_IDENTIFICADOR (c) : TIPO_INT
-            │   └── NO_OP_BINARIA (>) : TIPO_BOOLEAN
-            │       ├── NO_IDENTIFICADOR (a) : TIPO_INT
-            │       └── NO_IDENTIFICADOR (b) : TIPO_INT
-            └── NO_VAR_DECL
-                ├── NO_IDENTIFICADOR (d) : TIPO_INT
-                └── NO_OP_BINARIA (||) : TIPO_BOOLEAN
-                    ├── NO_LITERAL_BOOL (true) : TIPO_BOOLEAN
-                    └── NO_LITERAL_BOOL (false) : TIPO_BOOLEAN
+NO_CLASSE (TestePositivo)
+└── filho[0]: NO_METODO (main)
+    ├── filho[0]: NO_PARAMETROS
+    │   └── filho[0]: NO_PARAMETRO (args) : TIPO_ARRAY
+    └── filho[1]: NO_BLOCO
+        ├── filho[0]: NO_DECL_VARIAVEL (a) : TIPO_INT
+        │   └── filho[0]: NO_LITERAL_INT (10) : TIPO_INT
+        ├── filho[1]: NO_DECL_VARIAVEL (b) : TIPO_DOUBLE
+        │   └── filho[0]: NO_LITERAL_DOUBLE (5.5) : TIPO_DOUBLE
+        ├── filho[2]: NO_DECL_VARIAVEL (c) : TIPO_BOOLEAN
+        │   └── filho[0]: NO_OP_BINARIA (>) : TIPO_BOOLEAN
+        │       ├── filho[0]: NO_IDENTIFICADOR (a) : TIPO_INT
+        │       └── filho[1]: NO_IDENTIFICADOR (b) : TIPO_INT
+        └── filho[3]: NO_DECL_VARIAVEL (d) : TIPO_BOOLEAN
+            └── filho[0]: NO_OP_BINARIA (||) : TIPO_BOOLEAN
+                ├── filho[0]: NO_LITERAL_BOOL (true) : TIPO_BOOLEAN
+                └── filho[1]: NO_LITERAL_BOOL (false) : TIPO_BOOLEAN
+
+Analise semantica de tipos concluida com sucesso.

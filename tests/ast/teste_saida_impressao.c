@@ -26,6 +26,25 @@ int main(void) {
     NoAST *bloco = criarNo(NO_BLOCO, 3);
     adicionarFilho(metodo, bloco);
 
+    NoAST *decl = criarNo(NO_DECL_VARIAVEL, 4);
+    decl->tipo_dado = TIPO_INT;
+    decl->valor.valor_str = strdup("idade");
+    adicionarFilho(bloco, decl);
+
+    NoAST *atrib = criarNo(NO_ATRIBUICAO, 5);
+    strncpy(atrib->valor.operador, "=", sizeof(atrib->valor.operador) - 1);
+    NoAST *id_idade = criarNo(NO_IDENTIFICADOR, 5);
+    id_idade->valor.valor_str = strdup("idade");
+    adicionarFilho(atrib, id_idade);
+    adicionarFilho(bloco, atrib);
+
+    NoAST *atrib_composta = criarNo(NO_ATRIBUICAO, 6);
+    strncpy(atrib_composta->valor.operador, "+=", sizeof(atrib_composta->valor.operador) - 1);
+    NoAST *id_idade2 = criarNo(NO_IDENTIFICADOR, 6);
+    id_idade2->valor.valor_str = strdup("idade");
+    adicionarFilho(atrib_composta, id_idade2);
+    adicionarFilho(bloco, atrib_composta);
+
     /* 2. Redirecionar stdout para arquivo temporario */
     fflush(stdout);
     int stdout_backup = dup(STDOUT_FILENO);
@@ -54,6 +73,9 @@ int main(void) {
     assert(strstr(buffer, "NO_PARAMETROS") != NULL);
     assert(strstr(buffer, "NO_PARAMETRO (x)") != NULL);
     assert(strstr(buffer, "NO_BLOCO") != NULL);
+    assert(strstr(buffer, "NO_DECL_VARIAVEL (idade)") != NULL);
+    assert(strstr(buffer, "NO_ATRIBUICAO") != NULL);
+    assert(strstr(buffer, "NO_ATRIBUICAO (+=)") != NULL);
 
     /* 7. Liberar arvore */
     liberarAST(classe);

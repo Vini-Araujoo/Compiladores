@@ -1,0 +1,24 @@
+NO_CLASSE (ValidoDeclaracaoMultipla)
+├── filho[0]: NO_DECL_VARIAVEL (x)
+│   └── filho[0]: NO_LITERAL_INT (10)
+├── filho[1]: NO_DECL_VARIAVEL (y)
+├── filho[2]: NO_DECL_VARIAVEL (z)
+│   └── filho[0]: NO_LITERAL_INT (20)
+└── filho[3]: NO_METODO (testar)
+    ├── filho[0]: NO_PARAMETROS
+    └── filho[1]: NO_BLOCO
+        ├── filho[0]: NO_DECL_VARIAVEL (a)
+        │   └── filho[0]: NO_LITERAL_INT (1)
+        ├── filho[1]: NO_DECL_VARIAVEL (b)
+        ├── filho[2]: NO_DECL_VARIAVEL (c)
+        │   └── filho[0]: NO_LITERAL_INT (3)
+        ├── filho[3]: NO_DECL_VARIAVEL (d)
+        │   └── filho[0]: NO_LITERAL_DOUBLE (4.5)
+        ├── filho[4]: NO_DECL_VARIAVEL (e)
+        │   └── filho[0]: NO_LITERAL_DOUBLE (5.5)
+        ├── filho[5]: NO_DECL_VARIAVEL (f)
+        │   └── filho[0]: NO_LITERAL_BOOL (true)
+        └── filho[6]: NO_DECL_VARIAVEL (g)
+            └── filho[0]: NO_LITERAL_BOOL (false)
+
+Analise sintatica concluida com sucesso.
