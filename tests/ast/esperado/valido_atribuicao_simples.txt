@@ -1,0 +1,15 @@
+NO_CLASSE (ValidoAtribuicaoSimples)
+└── filho[0]: NO_METODO (executar)
+    ├── filho[0]: NO_PARAMETROS
+    └── filho[1]: NO_BLOCO
+        ├── filho[0]: NO_ATRIBUICAO
+        │   ├── filho[0]: NO_IDENTIFICADOR (x)
+        │   └── filho[1]: NO_LITERAL_INT (10)
+        ├── filho[1]: NO_ATRIBUICAO (+=)
+        │   ├── filho[0]: NO_IDENTIFICADOR (contador)
+        │   └── filho[1]: NO_LITERAL_INT (1)
+        └── filho[2]: NO_ATRIBUICAO (-=)
+            ├── filho[0]: NO_IDENTIFICADOR (saldo)
+            └── filho[1]: NO_LITERAL_INT (5)
+
+Analise sintatica concluida com sucesso.
