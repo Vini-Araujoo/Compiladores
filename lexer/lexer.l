@@ -34,6 +34,7 @@
 "case"          { return TOKEN_CASE;             }
 "default"       { return TOKEN_DEFAULT;          }
 "break"         { return TOKEN_BREAK;            }
+"continue"      { return TOKEN_CONTINUE;         }
 "do"            { return TOKEN_DO;               }
 
 "String"        { return TOKEN_STRING_TIPO;      }

@@ -63,6 +63,32 @@ executar_teste_condicao() {
     ((falhou += 1))
 }
 
+executar_teste_salto() {
+    local arquivo="$1"
+    local esperado="$2"
+    local trecho_erro="$3"
+    local saida
+    local status
+
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/$arquivo")"
+    status=$?
+
+    if [[ "$esperado" == "valido" && $status -eq 0 ]]; then
+        printf '  [PASS] %s aceito corretamente\n' "$arquivo"
+        ((passou += 1))
+        return
+    fi
+    if [[ "$esperado" == "invalido" && $status -ne 0 && "$saida" == *"$trecho_erro"* ]]; then
+        printf '  [PASS] %s rejeitado corretamente\n' "$arquivo"
+        ((passou += 1))
+        return
+    fi
+
+    printf '  [FAIL] %s falhou na validacao (status %d)\n' "$arquivo" "$status"
+    printf '         Saida: %s\n' "$saida"
+    ((falhou += 1))
+}
+
 BIN_TESTE_PILHA="$(resolve_bin "$BUILD_DIR/teste_pilha_escopos")"
 BIN_TESTE_BUSCA="$(resolve_bin "$BUILD_DIR/teste_busca_apos_fechamento_escopo")"
 BIN_TESTE_ESCOPOS="$(resolve_bin "$BUILD_DIR/teste_escopos_unitario")"
@@ -389,6 +415,21 @@ executar_teste_condicao "invalido_condicao_do_while_inteiro.java" "invalido" "4"
 executar_teste_condicao "invalido_condicao_for_inteiro.java" "invalido" "7"
 executar_teste_condicao "invalido_condicao_float.java" "invalido" "4"
 executar_teste_condicao "invalido_condicao_double.java" "invalido" "4"
+
+echo
+echo "=== Executando testes de Contexto de Saltos e Retornos (Issue 7.4) ==="
+
+executar_teste_salto "valido_break_em_for.java" "valido" ""
+executar_teste_salto "valido_break_em_switch.java" "valido" ""
+executar_teste_salto "valido_continue_em_laco.java" "valido" ""
+executar_teste_salto "valido_return_em_metodo_int.java" "valido" ""
+executar_teste_salto "valido_return_widening.java" "valido" ""
+executar_teste_salto "invalido_break_fora_de_laco.java" "invalido" "Erro semantico na linha 3: comando break fora de laco ou switch."
+executar_teste_salto "invalido_continue_fora_de_laco.java" "invalido" "Erro semantico na linha 3: comando continue fora de laco."
+executar_teste_salto "invalido_continue_em_switch.java" "invalido" "Erro semantico na linha 5: comando continue fora de laco."
+executar_teste_salto "invalido_return_com_valor_em_void.java" "invalido" "Erro semantico na linha 3: metodo void nao pode retornar valor."
+executar_teste_salto "invalido_return_vazio_em_nao_void.java" "invalido" "Erro semantico na linha 3: um metodo nao void exige retorno de expressao compativel."
+executar_teste_salto "invalido_return_tipo_incompativel.java" "invalido" "Erro semantico na linha 3: o valor retornado deve ser compativel com o tipo de retorno declarado do metodo."
 
 echo
 printf 'Resumo Analise Semantica: %d passou, %d falhou.\n' "$passou" "$falhou"

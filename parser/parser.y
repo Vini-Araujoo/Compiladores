@@ -161,6 +161,7 @@ static void adicionar_declaracoes_a_pai(NoAST *pai, NoAST *decls) {
 %token TOKEN_CASE
 %token TOKEN_DEFAULT
 %token TOKEN_BREAK
+%token TOKEN_CONTINUE
 %token TOKEN_DO
 %token TOKEN_WHILE
 %token TOKEN_FOR
@@ -252,7 +253,7 @@ static void adicionar_declaracoes_a_pai(NoAST *pai, NoAST *decls) {
 %type <no> bloco comando lista_comandos condicional condicao comando_if
 %type <no> declaracao_local declaracao_variavel lista_declaracoes item_declaracao
 %type <no> atribuicao comando_io repeticao comando_salto
-%type <no> expressao expressao_sintatica comando_return comando_switch casos_switch case_switch
+%type <no> expressao comando_return comando_switch casos_switch case_switch
 %type <no> default_switch declaracao_metodo comando_print argumento_opcional
 %type <no> acesso_array leitura_scanner chamada_metodo
 %type <no> instanciacao
@@ -773,6 +774,7 @@ comando_return:
 
 comando_salto:
       TOKEN_BREAK TOKEN_PTOVIRG { $$ = criarNo(NO_BREAK, yylineno); }
+    | TOKEN_CONTINUE TOKEN_PTOVIRG { $$ = criarNo(NO_CONTINUE, yylineno); }
     | comando_return
     ;
 
