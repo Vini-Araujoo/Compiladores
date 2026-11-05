@@ -67,7 +67,7 @@ Operadores de mesma precedência são associativos à esquerda: `10 - 4 - 3` é 
 8. **`++` e `--` em expressões:** `x++`, `++x`, `x--` e `--x` são alternativas de `expressao_sintatica` e produzem `NO_OP_UNARIA` (ex.: `y = ++a + b--;`). Os comandos isolados `i++;`, `++i;`, `i--;` e `--i;` já existentes em `atribuicao` foram mantidos, com seus nós `NO_INCREMENTO`, `NO_INCREMENTO_ANTES`, `NO_DECREMENTO` e `NO_DECREMENTO_ANTES`. Como as duas formas são ambíguas antes do `;`, o conflito Shift/Reduce é resolvido por precedência: `ID` (menor) e `TOKEN_PTOVIRG` (maior) foram declarados em `%precedence`, de modo que, nesse ponto, o parser escolhe sempre a regra de comando. O incremento do cabeçalho do `for` (`incremento_for`) não foi alterado.
 9. **Precedência dos unários:** `++` e `--` têm precedência maior que `!` e `-` (`-a++` é `-(a++)`), e os prefixos usam `%prec UMINUS`.
 10. **`NO_LITERAL_BOOL`:** `true` e `false` viram folhas com `valor_int` 1 ou 0. O campo `tipo_dado` não é preenchido nesta etapa.
-11. **Condições:** a regra `condicao` não foi alterada. Ela continua produzindo `NO_CONDICAO` sem a expressão como filho (ver `controle_fluxo_ast.md`); a ligação fica para a integração com as condições.
+11. **Condições:** a regra `condicao` devolve diretamente a expressão produzida por `expressao`. Os nós de `if`, `while`, `do-while` e `for` guardam essa expressão na posição correspondente, sem um wrapper `NO_CONDICAO`.
 
 ---
 

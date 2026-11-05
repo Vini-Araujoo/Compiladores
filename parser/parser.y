@@ -493,7 +493,6 @@ modificador_variavel:
         }
       ;
 
-// (STUB da Issue 3 apenas abre e fecha chaves por enquanto)
 bloco:
     TOKEN_ABRE_CHAVE lista_comandos TOKEN_FECHA_CHAVE  { $$ = $2; }
     ;
@@ -520,57 +519,51 @@ comando:
     | bloco { $$ = $1; }
     ;
 
-/* Expressões e comandos básicos */
-
-expressao:
-      expressao_sintatica { $$ = $1; }
-    ;
-
 /*
  * Issues 9.1 e 9.2: aritmetica, relacionais, logicos e unarios constroem a
  * AST; a hierarquia vem das declaracoes de precedencia. Parenteses devolvem o
  * no interno. Chamadas de metodo e Scanner ainda sao stubs genericos.
  */
-expressao_sintatica:
-      expressao_sintatica TOKEN_OU expressao_sintatica
+expressao:
+      expressao TOKEN_OU expressao
         { $$ = cria_no_op_binaria("||", $1, $3); }
-    | expressao_sintatica TOKEN_E expressao_sintatica
+    | expressao TOKEN_E expressao
         { $$ = cria_no_op_binaria("&&", $1, $3); }
-    | expressao_sintatica TOKEN_MAIS expressao_sintatica
+    | expressao TOKEN_MAIS expressao
         { $$ = cria_no_op_binaria("+", $1, $3); }
-    | expressao_sintatica TOKEN_MENOS expressao_sintatica
+    | expressao TOKEN_MENOS expressao
         { $$ = cria_no_op_binaria("-", $1, $3); }
-    | expressao_sintatica TOKEN_VEZES expressao_sintatica
+    | expressao TOKEN_VEZES expressao
         { $$ = cria_no_op_binaria("*", $1, $3); }
-    | expressao_sintatica TOKEN_DIV expressao_sintatica
+    | expressao TOKEN_DIV expressao
         { $$ = cria_no_op_binaria("/", $1, $3); }
-    | expressao_sintatica TOKEN_MOD expressao_sintatica
+    | expressao TOKEN_MOD expressao
         { $$ = cria_no_op_binaria("%", $1, $3); }
-    | expressao_sintatica TOKEN_MENOR expressao_sintatica
+    | expressao TOKEN_MENOR expressao
         { $$ = cria_no_op_binaria("<", $1, $3); }
-    | expressao_sintatica TOKEN_MAIOR expressao_sintatica
+    | expressao TOKEN_MAIOR expressao
         { $$ = cria_no_op_binaria(">", $1, $3); }
-    | expressao_sintatica TOKEN_MENOR_IGUAL expressao_sintatica
+    | expressao TOKEN_MENOR_IGUAL expressao
         { $$ = cria_no_op_binaria("<=", $1, $3); }
-    | expressao_sintatica TOKEN_MAIOR_IGUAL expressao_sintatica
+    | expressao TOKEN_MAIOR_IGUAL expressao
         { $$ = cria_no_op_binaria(">=", $1, $3); }
-    | expressao_sintatica TOKEN_IGUAL expressao_sintatica
+    | expressao TOKEN_IGUAL expressao
         { $$ = cria_no_op_binaria("==", $1, $3); }
-    | expressao_sintatica TOKEN_DIFERENTE expressao_sintatica
+    | expressao TOKEN_DIFERENTE expressao
         { $$ = cria_no_op_binaria("!=", $1, $3); }
-    | TOKEN_NEGACAO expressao_sintatica
+    | TOKEN_NEGACAO expressao
         { $$ = cria_no_op_unaria("!", $2, 0); }
-    | TOKEN_MENOS expressao_sintatica %prec UMINUS
+    | TOKEN_MENOS expressao %prec UMINUS
         { $$ = cria_no_op_unaria("-", $2, 0); }
-    | TOKEN_INCREMENTO expressao_sintatica %prec UMINUS
+    | TOKEN_INCREMENTO expressao %prec UMINUS
         { $$ = cria_no_op_unaria("++", $2, 0); }
-    | TOKEN_DECREMENTO expressao_sintatica %prec UMINUS
+    | TOKEN_DECREMENTO expressao %prec UMINUS
         { $$ = cria_no_op_unaria("--", $2, 0); }
-    | expressao_sintatica TOKEN_INCREMENTO
+    | expressao TOKEN_INCREMENTO
         { $$ = cria_no_op_unaria("++", $1, 1); }
-    | expressao_sintatica TOKEN_DECREMENTO
+    | expressao TOKEN_DECREMENTO
         { $$ = cria_no_op_unaria("--", $1, 1); }
-    | TOKEN_ABRE_PAR expressao_sintatica TOKEN_FECHA_PAR
+    | TOKEN_ABRE_PAR expressao TOKEN_FECHA_PAR
         { $$ = $2; }
     | ID
         { $$ = cria_no_instancia_id(NO_IDENTIFICADOR, TIPO_VOID, $1); }
@@ -770,16 +763,16 @@ lista_argumentos:
     ;
 
 comando_return:
-      TOKEN_RETURN TOKEN_PTOVIRG { $$ = criarNo(NO_RETURN, 0); }
+      TOKEN_RETURN TOKEN_PTOVIRG { $$ = criarNo(NO_RETURN, yylineno); }
     | TOKEN_RETURN expressao TOKEN_PTOVIRG
     {
-        $$ = criarNo(NO_RETURN, 0);
+        $$ = criarNo(NO_RETURN, $2->linha);
         adicionarFilho($$, $2);
     }
     ;
 
 comando_salto:
-      TOKEN_BREAK TOKEN_PTOVIRG { $$ = criarNo(NO_BREAK, 0); }
+      TOKEN_BREAK TOKEN_PTOVIRG { $$ = criarNo(NO_BREAK, yylineno); }
     | comando_return
     ;
 
@@ -788,7 +781,7 @@ comando_salto:
 condicao:
   expressao
     {
-        $$ = criarNo(NO_CONDICAO, 0);
+        $$ = $1;
     }
     ;
 
@@ -798,14 +791,14 @@ comando_if:
       TOKEN_IF TOKEN_ABRE_PAR condicao TOKEN_FECHA_PAR comando
         %prec LOWER_THAN_ELSE
         {
-            $$ = criarNo(NO_IF, 0);
+            $$ = criarNo(NO_IF, $3->linha);
             adicionarFilho($$, $3);
             adicionarFilho($$, $5);
         }
     | TOKEN_IF TOKEN_ABRE_PAR condicao TOKEN_FECHA_PAR comando
       TOKEN_ELSE comando
         {
-            $$ = criarNo(NO_IF, 0);
+            $$ = criarNo(NO_IF, $3->linha);
             adicionarFilho($$, $3);
             adicionarFilho($$, $5);
             adicionarFilho($$, $7);
@@ -816,7 +809,7 @@ comando_switch:
     TOKEN_SWITCH TOKEN_ABRE_PAR expressao TOKEN_FECHA_PAR
     TOKEN_ABRE_CHAVE casos_switch default_switch TOKEN_FECHA_CHAVE
     {
-        $$ = criarNo(NO_SWITCH, 0);
+        $$ = criarNo(NO_SWITCH, $3->linha);
         adicionarFilho($$, $3);
         adicionarFilho($$, $6);
         adicionarFilho($$, $7);
@@ -835,7 +828,7 @@ casos_switch:
 case_switch:
     TOKEN_CASE expressao TOKEN_DOIS_PONTOS lista_comandos
     {
-        $$ = criarNo(NO_CASE, 0);
+        $$ = criarNo(NO_CASE, $2->linha);
         adicionarFilho($$, $2);
         adicionarFilho($$, $4);
     }
@@ -845,7 +838,7 @@ default_switch:
       %empty { $$ = NULL; }
     | TOKEN_DEFAULT TOKEN_DOIS_PONTOS lista_comandos
     {
-        $$ = criarNo(NO_DEFAULT, 0);
+        $$ = criarNo(NO_DEFAULT, yylineno);
         adicionarFilho($$, $3);
     }
     ;
@@ -942,7 +935,7 @@ repeticao:
 comando_for:
     TOKEN_FOR TOKEN_ABRE_PAR atribuicao_for condicao_for incremento_for TOKEN_FECHA_PAR bloco
     {
-        $$ = criarNo(NO_FOR, 0);
+        $$ = criarNo(NO_FOR, $4 ? $4->linha : yylineno);
         adicionarFilho($$, $3);
         adicionarFilho($$, $4);
         adicionarFilho($$, $5);
@@ -953,7 +946,7 @@ comando_for:
 comando_do_while:
     TOKEN_DO bloco TOKEN_WHILE TOKEN_ABRE_PAR condicao TOKEN_FECHA_PAR TOKEN_PTOVIRG
     {
-        $$ = criarNo(NO_DO_WHILE, 0);
+        $$ = criarNo(NO_DO_WHILE, $5->linha);
         adicionarFilho($$, $2);
         adicionarFilho($$, $5);
     }
@@ -962,7 +955,7 @@ comando_do_while:
 comando_while:
     TOKEN_WHILE TOKEN_ABRE_PAR condicao TOKEN_FECHA_PAR bloco
     {
-        $$ = criarNo(NO_WHILE, 0);
+        $$ = criarNo(NO_WHILE, $3->linha);
         adicionarFilho($$, $3);
         adicionarFilho($$, $5);
     }
