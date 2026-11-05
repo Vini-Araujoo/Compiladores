@@ -6,12 +6,10 @@ Este documento descreve a representação dos laços `while`, `do-while` e `for`
 
 | Nó | Filho 0 | Filho 1 |
 | --- | --- | --- |
-| `NO_WHILE` | Condição (`NO_CONDICAO`) | Bloco (`NO_BLOCO`) |
-| `NO_DO_WHILE` | Bloco (`NO_BLOCO`) | Condição (`NO_CONDICAO`) |
+| `NO_WHILE` | Expressão da condição | Bloco (`NO_BLOCO`) |
+| `NO_DO_WHILE` | Bloco (`NO_BLOCO`) | Expressão da condição |
 
-A ordem representa a ordem de execução e a forma sintática: `while` testa antes do bloco; `do-while` executa o bloco antes do teste. A condição é o nó produzido pela regra `condicao`; a construção interna da expressão pertence à etapa responsável por expressões.
-
-Enquanto essa etapa não estiver integrada, a regra `expressao` retorna um nó temporário `NO_EXPRESSAO` sem filhos. Ele permite que regras que dependem de uma expressão tenham um valor AST definido, mas não representa os operadores nem os operandos da expressão.
+A ordem representa a ordem de execução e a forma sintática: `while` testa antes do bloco; `do-while` executa o bloco antes do teste. A regra `condicao` devolve diretamente o nó produzido por `expressao`; portanto, a posição da condição contém o nó concreto da expressão, como `NO_OP_BINARIA`, `NO_OP_UNARIA`, um literal ou um identificador.
 
 ## Nó `NO_FOR`
 
@@ -20,7 +18,7 @@ Enquanto essa etapa não estiver integrada, a regra `expressao` retorna um nó t
 | Índice | Segmento | Exemplos |
 | --- | --- | --- |
 | `filhos[0]` | Inicialização | `i = 0` ou declaração local |
-| `filhos[1]` | Teste da condição | `i < limite` |
+| `filhos[1]` | Expressão da condição (ou `NULL`) | `i < limite` |
 | `filhos[2]` | Incremento | `i++`, `++i`, `i--`, `--i` ou atribuição |
 | `filhos[3]` | Bloco | Corpo do laço (`NO_BLOCO`) |
 

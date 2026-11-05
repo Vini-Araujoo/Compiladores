@@ -341,29 +341,48 @@ static void verificarNoEscopo(NoAST *no) {
             desempilharEscopo();
             break;
 
+        case NO_IF: 
+            // Valida a condicional
+            if(no->num_filhos > 0 && no->filhos[0]){
+                verificarNoEscopo(no->filhos[0]);
+                TipoDado tipo = inferirTipoExpressao(no->filhos[0]);
+                int linha = obterLinha(no);
+                if(tipo != TIPO_BOOLEAN) {
+                    erros_escopo++;
+                    fprintf(stderr, "Erro semantico na linha %d: condicao do laco/if deve ser booleana.\n",
+                            linha);
+                }
+            }
+            // Valida corpo do if e o else
+            for (int i = 1; i < no->num_filhos; i++) {
+                verificarNoEscopo(no->filhos[i]);
+            }
+            break;
+
         case NO_FOR:
             empilharEscopo();
-            /* inicializacao (pode conter declaracao de variavel de controle do loop) */
-            if (no->num_filhos > 0 && no->filhos[0]) {
-                verificarNoEscopo(no->filhos[0]);
+            /* 
+            Inicializacao (pode conter declaracao de variavel de controle do loop)
+            Condicao
+            Incremento
+            Podem ser nulos, se for for(;;;), por exemplo 
+            */
+            for (int i = 0; i < 3; i++) {
+                if(no->num_filhos > i && no -> filhos[i]){
+                    verificarNoEscopo(no->filhos[i]);
+                }
             }
-            /* condicao */
-            if (no->num_filhos > 1 && no->filhos[1]) {
-                verificarNoEscopo(no->filhos[1]);
-            }
-            /* incremento */
-            if (no->num_filhos > 2 && no->filhos[2]) {
-                verificarNoEscopo(no->filhos[2]);
-            }
-            /* corpo do loop */
+            // Corpo do loop
             if (no->num_filhos > 3 && no->filhos[3]) {
                 NoAST *corpo_for = no->filhos[3];
                 if (corpo_for->tipo_no == NO_BLOCO) {
-                    for (int i = 0; i < corpo_for->num_filhos; i++) {
-                        verificarNoEscopo(corpo_for->filhos[i]);
-                    }
-                } else {
+                    // Vai abrir um outro escopo para o BLOCO
                     verificarNoEscopo(corpo_for);
+                } else {
+                    erros_escopo++;
+                    int linha = obterLinha(no);
+                    fprintf(stderr, "Erro semantico na linha %d: corpo do for deve ser um BLOCO.\n",
+                            linha);
                 }
             }
             desempilharEscopo();
