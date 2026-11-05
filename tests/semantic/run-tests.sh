@@ -36,6 +36,33 @@ exec_bin() {
     return $status
 }
 
+executar_teste_condicao() {
+    local arquivo="$1"
+    local esperado="$2"
+    local linha="$3"
+    local saida
+    local status
+
+    saida="$(exec_bin "$BIN_PARSER" --semantico < "$SEMANTIC_DIR/$arquivo")"
+    status=$?
+
+    if [[ "$esperado" == "valido" ]]; then
+        if [[ $status -eq 0 ]]; then
+            printf '  [PASS] %s aceito corretamente\n' "$arquivo"
+            ((passou += 1))
+            return
+        fi
+    elif [[ $status -ne 0 && "$saida" == *"Erro semantico na linha $linha: condicao deve ser booleana."* ]]; then
+        printf '  [PASS] %s rejeitado corretamente na linha %s\n' "$arquivo" "$linha"
+        ((passou += 1))
+        return
+    fi
+
+    printf '  [FAIL] %s falhou na validacao (status %d)\n' "$arquivo" "$status"
+    printf '         Saida: %s\n' "$saida"
+    ((falhou += 1))
+}
+
 BIN_TESTE_PILHA="$(resolve_bin "$BUILD_DIR/teste_pilha_escopos")"
 BIN_TESTE_BUSCA="$(resolve_bin "$BUILD_DIR/teste_busca_apos_fechamento_escopo")"
 BIN_TESTE_ESCOPOS="$(resolve_bin "$BUILD_DIR/teste_escopos_unitario")"
@@ -350,6 +377,18 @@ if [[ -x "$BIN_SEMANTIC" ]]; then
         ((falhou += 1))
     fi
 fi
+
+echo
+echo "=== Executando testes de Validacao de Condicoes de Controle (Issue 7.5) ==="
+
+executar_teste_condicao "valido_condicao_relacional_boolean.java" "valido" ""
+executar_teste_condicao "valido_condicao_literal_boolean.java" "valido" ""
+executar_teste_condicao "invalido_condicao_if_inteiro.java" "invalido" "4"
+executar_teste_condicao "invalido_condicao_while_string.java" "invalido" "3"
+executar_teste_condicao "invalido_condicao_do_while_inteiro.java" "invalido" "4"
+executar_teste_condicao "invalido_condicao_for_inteiro.java" "invalido" "7"
+executar_teste_condicao "invalido_condicao_float.java" "invalido" "4"
+executar_teste_condicao "invalido_condicao_double.java" "invalido" "4"
 
 echo
 printf 'Resumo Analise Semantica: %d passou, %d falhou.\n' "$passou" "$falhou"
