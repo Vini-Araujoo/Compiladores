@@ -38,6 +38,7 @@ typedef enum {
     NO_DEFAULT,
     NO_RETURN,
     NO_BREAK,
+    NO_CONTINUE,
 
     NO_INCREMENTO,
     NO_DECREMENTO,

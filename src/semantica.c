@@ -184,6 +184,10 @@ int validarChamadaMetodo(const char *nome, const NoAST *argumentos, int linha) {
 
 static int erros_escopo = 0;
 static int linha_corrente = 1;
+static int profundidade_break = 0;
+static int profundidade_lacos = 0;
+static NoAST *metodoAtual = NULL;
+static NoAST *metodoAnterior = NULL;
 
 static void verificarNoEscopo(NoAST *no);
 
@@ -269,6 +273,8 @@ static void verificarMetodoEscopo(NoAST *no) {
         }
     }
 
+    metodoAnterior = metodoAtual;
+    metodoAtual = no;
     /* Filhos[1] = corpo do método (NO_BLOCO) */
     if (no->num_filhos > 1 && no->filhos[1]) {
         NoAST *corpo = no->filhos[1];
@@ -282,6 +288,7 @@ static void verificarMetodoEscopo(NoAST *no) {
         }
     }
 
+    metodoAtual = metodoAnterior;
     desempilharEscopo();
 }
 
@@ -343,6 +350,49 @@ static void verificarNoEscopo(NoAST *no) {
             verificarDeclaracao(no);
             break;
 
+        case NO_BREAK:
+            if (profundidade_break <= 0) {
+                erros_escopo++;
+                int linha = obterLinha(no);
+                fprintf(stderr, "Erro semantico na linha %d: comando break fora de laco ou switch.\n",
+                        linha);
+            }
+            break;
+
+        case NO_CONTINUE:
+            if (profundidade_lacos <= 0) {
+                erros_escopo++;
+                int linha = obterLinha(no);
+                fprintf(stderr, "Erro semantico na linha %d: comando continue fora de laco.\n",
+                        linha);
+            }
+            break;
+
+        case NO_RETURN:
+            if(metodoAtual->tipo_dado == TIPO_VOID){
+                if(no->num_filhos > 0){
+                    erros_escopo++;
+                    int linha = obterLinha(no);
+                    fprintf(stderr, "Erro semantico na linha %d: metodo void nao pode retornar valor.\n",
+                            linha);
+                }
+            } else {
+                if(no->num_filhos <= 0){
+                    erros_escopo++;
+                    int linha = obterLinha(no);
+                    fprintf(stderr, "Erro semantico na linha %d: um metodo nao void exige retorno de expressao compativel.\n",
+                            linha);
+                } else {
+                    TipoDado tipoExpressao = inferirTipoExpressao(no->filhos[0]);
+                    if(!tiposCompativeis(metodoAtual->tipo_dado, tipoExpressao)){
+                        erros_escopo++;
+                        int linha = obterLinha(no);
+                        fprintf(stderr, "Erro semantico na linha %d: o valor retornado deve ser compativel com o tipo de retorno declarado do metodo.", linha);
+                    }
+                }
+            }
+            break;
+
         case NO_BLOCO:
             empilharEscopo();
             for (int i = 0; i < no->num_filhos; i++) {
@@ -363,8 +413,55 @@ static void verificarNoEscopo(NoAST *no) {
             }
             break;
 
+        case NO_SWITCH:
+            // Vai validar as expressoes, o NO_CASES e o NO_DEFAULT
+            profundidade_break++;
+            for (int i = 0; i < no->num_filhos; i++) {
+                verificarNoEscopo(no->filhos[i]);
+            }
+            profundidade_break--;
+            break;
+
+        case NO_CASES:
+            for (int i = 0; i < no->num_filhos; i++) {
+                verificarNoEscopo(no->filhos[i]);
+            }
+            break;
+
+        case NO_CASE: {
+            if (no->num_filhos > 0 && no->filhos[0]) {
+                verificarNoEscopo(no->filhos[0]);
+            }
+
+            NoAST *corpo_case = no->num_filhos > 1 ? no->filhos[1] : NULL;
+            if (corpo_case && corpo_case->tipo_no == NO_BLOCO) {
+                verificarNoEscopo(corpo_case);
+            } else if (corpo_case) {
+                erros_escopo++;
+                int linha = obterLinha(corpo_case);
+                fprintf(stderr, "Erro semantico na linha %d: corpo do case deve ser um BLOCO.\n",
+                        linha);
+            }
+            break;
+        }
+
+        case NO_DEFAULT: {
+            NoAST *corpo_default = no->num_filhos > 0 ? no->filhos[0] : NULL;
+            if (corpo_default && corpo_default->tipo_no == NO_BLOCO) {
+                verificarNoEscopo(corpo_default);
+            } else if (corpo_default) {
+                erros_escopo++;
+                int linha = obterLinha(corpo_default);
+                fprintf(stderr, "Erro semantico na linha %d: corpo do default deve ser um BLOCO.\n",
+                        linha);
+            }
+            break;
+        }
+
         case NO_WHILE:
             empilharEscopo();
+            profundidade_break++;
+            profundidade_lacos++;
             // Valida condicional
             if(no->num_filhos > 0 && no->filhos[0]){
                 verificarNoEscopo(no->filhos[0]);
@@ -383,11 +480,15 @@ static void verificarNoEscopo(NoAST *no) {
                             linha);
                 }
             }
+            profundidade_lacos--;
+            profundidade_break--;
             desempilharEscopo();
             break;
 
         case NO_DO_WHILE:
             empilharEscopo();
+            profundidade_break++;
+            profundidade_lacos++;
             // Valida corpo do do_while
             if (no->num_filhos > 0 && no->filhos[0]) {
                 NoAST *corpo_while = no->filhos[0];
@@ -407,12 +508,16 @@ static void verificarNoEscopo(NoAST *no) {
                 verificarNoEscopo(no->filhos[1]);
                 validaCondicional(no->filhos[1]);
             }
+            profundidade_lacos--;
+            profundidade_break--;
             desempilharEscopo();
             break;
 
 
         case NO_FOR:
             empilharEscopo();
+            profundidade_break++;
+            profundidade_lacos++;
             /* 
             Inicializacao (pode conter declaracao de variavel de controle do loop)
             Condicao
@@ -442,6 +547,8 @@ static void verificarNoEscopo(NoAST *no) {
                             linha);
                 }
             }
+            profundidade_lacos--;
+            profundidade_break--;
             desempilharEscopo();
             break;
 
@@ -576,6 +683,8 @@ int verificarEscopos(NoAST *raiz) {
 
     erros_escopo = 0;
     linha_corrente = raiz->linha > 0 ? raiz->linha : 1;
+    profundidade_break = 0;
+    profundidade_lacos = 0;
     inicializarTabelaSimbolos();
 
     verificarNoEscopo(raiz);
