@@ -3,7 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include <unistd.h>
-#include "../../src/ast.h"
+#include "../../src/ast/ast.h"
 
 int main(void) {
     printf("Executando teste_saida_impressao...\n");

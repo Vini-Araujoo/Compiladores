@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "../../src/ast.h"
+#include "../../src/ast/ast.h"
 
 int main(void) {
     printf("Executando teste_criacao_nos...\n");

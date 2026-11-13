@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "../../src/ast.h"
+#include "../../src/ast/ast.h"
 
 int main(void) {
     printf("Executando teste_impressao_arvore_vazia...\n");

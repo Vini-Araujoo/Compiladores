@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "../../src/tabela.h"
+#include "../../src/semantic/tabela.h"
 
 int main(void) {
     printf("Executando teste_busca_apos_fechamento_escopo...\n");

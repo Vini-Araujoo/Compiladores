@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../src/ast.h"
-#include "../src/tabela.h"
-#include "../src/semantica.h"
+#include "../src/ast/ast.h"
+#include "../src/semantic/tabela.h"
+#include "../src/semantic/semantica.h"
 
 int yylex(void);
 void yyerror(const char *mensagem);
@@ -234,8 +234,8 @@ static void adicionar_declaracoes_a_pai(NoAST *pai, NoAST *decls) {
 %precedence TOKEN_ELSE
 
 %code requires {
-    #include "../src/ast.h"
-    #include "../src/tabela.h"
+    #include "../src/ast/ast.h"
+    #include "../src/semantic/tabela.h"
 }
 
 %union {

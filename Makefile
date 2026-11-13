@@ -2,7 +2,7 @@ CC := gcc
 FLEX := flex
 BISON := bison
 
-CFLAGS := -Wall -Wextra -Ibuild
+CFLAGS := -Wall -Wextra -Ibuild -Isrc -Isrc/ast -Isrc/semantic -Isrc/codegen
 BUILD_DIR := build
 
 LEXER_SOURCE := lexer/lexer.l
@@ -22,17 +22,17 @@ parser: $(PARSER_BINARY)
 
 semantic: $(SEMANTIC_BINARY)
 
-$(SEMANTIC_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast.c src/ast.h src/inferencia.c src/inferencia.h src/main_semantico.c src/tabela.c src/tabela.h src/semantica.c src/semantica.h | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -DANALISE_SEMANTICA $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast.c src/tabela.c src/semantica.c src/inferencia.c src/main_semantico.c -o $@
+$(SEMANTIC_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast/ast.c src/ast/ast.h src/semantic/inferencia.c src/semantic/inferencia.h src/semantic/main_semantico.c src/semantic/tabela.c src/semantic/tabela.h src/semantic/semantica.c src/semantic/semantica.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -DANALISE_SEMANTICA $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast/ast.c src/semantic/tabela.c src/semantic/semantica.c src/semantic/inferencia.c src/semantic/main_semantico.c -o $@
 
 test: parser
 	@bash tests/parser/run-tests.sh $(ISSUE)
 
 test-ast: parser | $(BUILD_DIR)
-	@$(CC) $(CFLAGS) -Isrc src/ast.c tests/ast/teste_criacao_nos.c -o $(BUILD_DIR)/teste_criacao_nos
-	@$(CC) $(CFLAGS) -Isrc src/ast.c tests/ast/teste_adicionar_filho_nulo.c -o $(BUILD_DIR)/teste_adicionar_filho_nulo
-	@$(CC) $(CFLAGS) -Isrc src/ast.c tests/ast/teste_saida_impressao.c -o $(BUILD_DIR)/teste_saida_impressao
-	@$(CC) $(CFLAGS) -Isrc src/ast.c tests/ast/teste_impressao_arvore_vazia.c -o $(BUILD_DIR)/teste_impressao_arvore_vazia
+	@$(CC) $(CFLAGS) src/ast/ast.c tests/ast/teste_criacao_nos.c -o $(BUILD_DIR)/teste_criacao_nos
+	@$(CC) $(CFLAGS) src/ast/ast.c tests/ast/teste_adicionar_filho_nulo.c -o $(BUILD_DIR)/teste_adicionar_filho_nulo
+	@$(CC) $(CFLAGS) src/ast/ast.c tests/ast/teste_saida_impressao.c -o $(BUILD_DIR)/teste_saida_impressao
+	@$(CC) $(CFLAGS) src/ast/ast.c tests/ast/teste_impressao_arvore_vazia.c -o $(BUILD_DIR)/teste_impressao_arvore_vazia
 	@$(BUILD_DIR)/teste_criacao_nos
 	@$(BUILD_DIR)/teste_adicionar_filho_nulo
 	@$(BUILD_DIR)/teste_saida_impressao
@@ -41,21 +41,21 @@ test-ast: parser | $(BUILD_DIR)
 	@echo "Todos os testes unitários da AST passaram com sucesso!"
 
 test-tabela: | $(BUILD_DIR)
-	@$(CC) $(CFLAGS) -Isrc src/tabela.c tests/semantic/teste_pilha_escopos.c -o $(BUILD_DIR)/teste_pilha_escopos
-	@$(CC) $(CFLAGS) -Isrc src/tabela.c tests/semantic/teste_busca_apos_fechamento_escopo.c -o $(BUILD_DIR)/teste_busca_apos_fechamento_escopo
+	@$(CC) $(CFLAGS) src/semantic/tabela.c tests/semantic/teste_pilha_escopos.c -o $(BUILD_DIR)/teste_pilha_escopos
+	@$(CC) $(CFLAGS) src/semantic/tabela.c tests/semantic/teste_busca_apos_fechamento_escopo.c -o $(BUILD_DIR)/teste_busca_apos_fechamento_escopo
 	@$(BUILD_DIR)/teste_pilha_escopos
 	@$(BUILD_DIR)/teste_busca_apos_fechamento_escopo
 	@echo "Todos os testes unitários da tabela de símbolos passaram com sucesso!"
 
 test-semantic: $(PARSER_BINARY) semantic | $(BUILD_DIR)
-	@$(CC) $(CFLAGS) -Isrc src/tabela.c tests/semantic/teste_pilha_escopos.c -o $(BUILD_DIR)/teste_pilha_escopos
-	@$(CC) $(CFLAGS) -Isrc src/tabela.c tests/semantic/teste_busca_apos_fechamento_escopo.c -o $(BUILD_DIR)/teste_busca_apos_fechamento_escopo
-	@$(CC) $(CFLAGS) -Isrc src/ast.c src/tabela.c src/semantica.c tests/semantic/teste_escopos_unitario.c -o $(BUILD_DIR)/teste_escopos_unitario
+	@$(CC) $(CFLAGS) src/semantic/tabela.c tests/semantic/teste_pilha_escopos.c -o $(BUILD_DIR)/teste_pilha_escopos
+	@$(CC) $(CFLAGS) src/semantic/tabela.c tests/semantic/teste_busca_apos_fechamento_escopo.c -o $(BUILD_DIR)/teste_busca_apos_fechamento_escopo
+	@$(CC) $(CFLAGS) src/ast/ast.c src/semantic/tabela.c src/semantic/semantica.c tests/semantic/teste_escopos_unitario.c -o $(BUILD_DIR)/teste_escopos_unitario
 	@bash tests/semantic/run-tests.sh
 	@echo "Todos os testes semânticos passaram com sucesso!"
 
-$(PARSER_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast.c src/ast.h src/tabela.c src/tabela.h src/semantica.c src/semantica.h | $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast.c src/tabela.c src/semantica.c -o $@
+$(PARSER_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast/ast.c src/ast/ast.h src/semantic/tabela.c src/semantic/tabela.h src/semantic/semantica.c src/semantic/semantica.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast/ast.c src/semantic/tabela.c src/semantic/semantica.c -o $@
 
 $(PARSER_GENERATED_C) $(PARSER_GENERATED_H): $(PARSER_SOURCE) | $(BUILD_DIR)
 	$(BISON) -d -o $(PARSER_GENERATED_C) $(PARSER_SOURCE)

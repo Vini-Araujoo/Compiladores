@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "../../src/ast.h"
-#include "../../src/tabela.h"
-#include "../../src/semantica.h"
+#include "../../src/ast/ast.h"
+#include "../../src/semantic/tabela.h"
+#include "../../src/semantic/semantica.h"
 
 /*
  * Teste unitário em C puro para verificar a passagem semântica de resolução
