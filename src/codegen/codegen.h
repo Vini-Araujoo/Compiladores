@@ -45,6 +45,8 @@ void emitirAtribuicao(NoAST *no, FILE *saida, int nivel);
 void emitirPrintln(NoAST *no, FILE *saida, int nivel);
 void emitirPrint(NoAST *no, FILE *saida, int nivel);
 void emitirScannerLeitura(NoAST *no, FILE *saida, int nivel);
+void emitirScannerLeituraEm(NoAST *no, const char *destino, FILE *saida, int nivel);
+void emitirInstanciacaoScanner(NoAST *no, FILE *saida, int nivel);
 void emitirInstanciacaoArray(NoAST *no, FILE *saida, int nivel);
 void emitirAcessoArray(NoAST *no, FILE *saida);
 
