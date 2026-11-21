@@ -18,7 +18,8 @@ ao final da string de formato; o `print` não acrescenta.
 | `char` | `%c` | `printf("%c\n", c);` |
 | `boolean` | `%s` | `printf("%s\n", (b) ? "true" : "false");` |
 
-`System.out.println();` sem argumento gera `printf("\n");`.
+`System.out.println();` sem argumento gera `printf("\n");`. `System.out.print();`
+sem argumento não existe em Java e gera um erro de geração.
 
 ## Entrada: métodos do `Scanner`
 
@@ -41,10 +42,10 @@ por isso não levam `&`.
 
 `Scanner sc = new Scanner(System.in);` não gera declaração de variável, porque a
 entrada padrão (`stdin`) já está aberta em C. O gerador emite apenas um
-comentário:
+comentário genérico, já que o nó da instanciação não guarda o nome da variável:
 
 ```c
-/* Scanner sc = new Scanner(System.in); */
+/* Scanner: entrada padrao (stdin) ja aberta */
 ```
 
 ## Contextos de emissão
@@ -63,6 +64,12 @@ nome da variável de destino e emite o `scanf`.
 
 - **Leitura sem atribuição:** `sc.nextInt();` como comando isolado não é
   suportado e gera um erro de geração, pois não há variável de destino.
+- **Tipo indefinido:** se o tipo da expressão impressa não puder ser determinado
+  (por exemplo, `void` ou array), o gerador escreve um erro em `stderr` com a
+  linha e não emite o `printf`.
+- **Concatenação de `String`:** `System.out.println("a" + x)` não é traduzida
+  corretamente, porque `+` entre strings não existe em C. Isso depende do
+  `emitirExpressao` e fica fora do escopo deste módulo.
 - **`nextLine` após leitura numérica:** em Java, `nextLine()` depois de
   `nextInt()` devolve o resto da linha (normalmente vazio). Em C, a máscara
   ` %[^\n]` descarta os espaços em branco iniciais e lê a próxima linha de
