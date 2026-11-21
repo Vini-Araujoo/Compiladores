@@ -14,7 +14,7 @@ PARSER_GENERATED_H := $(BUILD_DIR)/parser.tab.h
 PARSER_BINARY := $(BUILD_DIR)/parser
 
 SEMANTIC_BINARY := $(BUILD_DIR)/semantic
-.PHONY: all parser semantic test test-ast test-tabela test-semantic clean
+.PHONY: all parser semantic test test-ast test-tabela test-semantic test-codegen clean
 
 all: parser
 
@@ -53,6 +53,12 @@ test-semantic: $(PARSER_BINARY) semantic | $(BUILD_DIR)
 	@$(CC) $(CFLAGS) src/ast/ast.c src/semantic/tabela.c src/semantic/semantica.c tests/semantic/teste_escopos_unitario.c -o $(BUILD_DIR)/teste_escopos_unitario
 	@bash tests/semantic/run-tests.sh
 	@echo "Todos os testes semânticos passaram com sucesso!"
+
+test-codegen: parser | $(BUILD_DIR)
+	@$(CC) $(CFLAGS) tests/codegen/teste_io_unitario.c src/codegen/codegen_main.c src/codegen/codegen_io.c src/ast/ast.c -o $(BUILD_DIR)/teste_io_unitario
+	@$(BUILD_DIR)/teste_io_unitario
+	@bash tests/codegen/run-tests.sh
+	@echo "Todos os testes do codegen de I/O passaram com sucesso!"
 
 $(PARSER_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast/ast.c src/ast/ast.h src/semantic/tabela.c src/semantic/tabela.h src/semantic/semantica.c src/semantic/semantica.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast/ast.c src/semantic/tabela.c src/semantic/semantica.c -o $@
