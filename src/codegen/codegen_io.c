@@ -131,3 +131,166 @@ void emitirInstanciacaoScanner(NoAST *no, FILE *saida, int nivel) {
     fprintf(saida, "/* Scanner: entrada padrao (stdin) ja aberta */\n");
 }
 
+static TipoDado tipoDaExpressao(NoAST *no);
+
+static TipoDado promover(TipoDado a, TipoDado b) {
+    if (a == TIPO_DOUBLE || b == TIPO_DOUBLE)
+    {
+        return TIPO_DOUBLE;
+    }
+    if (a == TIPO_FLOAT || b == TIPO_FLOAT)
+    {
+        return TIPO_FLOAT;
+    }
+    if (a == TIPO_LONG || b == TIPO_LONG)
+    {
+        return TIPO_LONG;
+    }   
+    return TIPO_INT;   
+}
+
+static TipoDado tipoOpUnaria(NoAST *no)
+{
+    if (no->num_filhos < 1)
+    {
+        return TIPO_INDEFINIDO;
+    }
+    if (strcmp(no->valor.operador, "!") == 0)
+    {
+        return TIPO_BOOLEAN;
+    }
+    return tipoDaExpressao(no->filhos[0]);
+}
+
+static TipoDado tipoOpBinaria(NoAST *no)
+{
+    if (no->num_filhos < 2)
+    {
+        return TIPO_INDEFINIDO;
+    }
+    const char *op = no->valor.operador;
+    if (strcmp(op, "&&") == 0 || strcmp(op, "||") == 0 ||
+        strcmp(op, "<") == 0  || strcmp(op, ">") == 0  ||
+        strcmp(op, "<=") == 0 || strcmp(op, ">=") == 0 ||
+        strcmp(op, "==") == 0 || strcmp(op, "!=") == 0)
+    {
+        return TIPO_BOOLEAN;
+    }
+
+    TipoDado esq = tipoDaExpressao(no->filhos[0]);
+    TipoDado dir = tipoDaExpressao(no->filhos[1]);
+
+    if (esq == TIPO_INDEFINIDO || dir == TIPO_INDEFINIDO)
+    {
+        return TIPO_INDEFINIDO;
+    }
+
+    if (strcmp(op, "+") == 0 && (esq == TIPO_STRING || dir == TIPO_STRING))
+    {
+        return TIPO_STRING;
+    }
+    return promover(esq, dir);
+}
+
+static TipoDado tipoDaExpressao(NoAST *no)
+{
+    if (no == NULL)
+    {
+        return TIPO_INDEFINIDO;
+    }
+
+    switch (no->tipo_no)
+    {
+        case NO_LITERAL_INT:
+            return TIPO_INT;
+
+        case NO_LITERAL_DOUBLE:
+            return TIPO_DOUBLE;
+
+        case NO_LITERAL_BOOL:
+            return TIPO_BOOLEAN;
+
+        case NO_LITERAL_STRING:
+            return TIPO_STRING;
+
+        case NO_IDENTIFICADOR:
+            if (no->simbolo != NULL)
+            {
+                return no->simbolo->tipo;
+            }
+            return no->tipo_dado;
+
+        case NO_EXPRESSAO:
+            if (no->num_filhos == 1)
+            {
+                return tipoDaExpressao(no->filhos[0]);
+            }
+            return TIPO_INDEFINIDO;
+
+        case NO_OP_UNARIA:
+            return tipoOpUnaria(no);
+
+        case NO_OP_BINARIA:
+            return tipoOpBinaria(no);
+
+        default:
+            return TIPO_INDEFINIDO;
+    }
+}
+
+static void emitirSaida(NoAST *no, FILE *saida, int nivel, int quebraLinha)
+{
+    if (no == NULL)
+    {
+        fprintf(stderr, "Erro de geracao: no de saida nulo.\n");
+        return;
+    }
+    if (no->num_filhos == 0)
+    {
+        if (quebraLinha)
+        {
+            emitirIndentacao(saida, nivel);
+            fprintf(saida, "printf(\"\\n\");\n");
+        }
+        else
+        {
+            fprintf(stderr, "Erro de geracao na linha %d: print sem argumento.\n", no->linha);
+        }
+        return;
+    }
+    NoAST *expr = no->filhos[0];
+    TipoDado tipo = tipoDaExpressao(expr);
+    const char *mascara = mascaraPrintf(tipo);
+
+    if (mascara == NULL)
+    {
+        fprintf(stderr, "Erro de geracao na linha %d: tipo da expressao indefinido ou nao suportado.\n", no->linha);
+        return;
+    }
+
+    emitirIndentacao(saida, nivel);
+    fprintf(saida, "%s", "printf(\"");
+    fprintf(saida, "%s%s", mascara, quebraLinha ? "\\n" : "");
+    fprintf(saida, "%s", "\", ");
+    if (tipo == TIPO_BOOLEAN)
+    {
+        fprintf(saida, "(");
+        emitirExpressao(expr, saida);
+        fprintf(saida, ") ? \"true\" : \"false\"");
+    }
+    else
+    {
+        emitirExpressao(expr, saida);
+    }
+    fprintf(saida, "%s", ");\n");
+}
+
+void emitirPrintln(NoAST *no, FILE *saida, int nivel)
+{
+    emitirSaida(no, saida, nivel, 1);
+}
+
+void emitirPrint(NoAST *no, FILE *saida, int nivel)
+{
+    emitirSaida(no, saida, nivel, 0);
+}
