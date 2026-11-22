@@ -294,3 +294,62 @@ void emitirPrint(NoAST *no, FILE *saida, int nivel)
 {
     emitirSaida(no, saida, nivel, 0);
 }
+
+static const char *tipoBaseC(TipoDado tipo) {
+    switch (tipo)
+    {
+    case TIPO_INT:
+        return "int";
+    case TIPO_DOUBLE:
+        return "double";
+    case TIPO_STRING:
+        return "char*";
+    default:
+        return NULL;
+    }
+}
+
+void emitirAcessoArray(NoAST *no, FILE *saida) {
+    if (no == NULL) {
+        fprintf(stderr, "Erro de geracao: no de acesso a array nulo.\n");
+        return;
+    }
+    if (no->num_filhos < 2 || 
+        no->filhos[1] == NULL ||
+        no->filhos[0] == NULL ||
+        no->filhos[0]->tipo_no != NO_IDENTIFICADOR ||
+        no->filhos[0]->valor.valor_str == NULL) {
+
+        fprintf(stderr, "Erro de geracao na linha %d: acesso a array sem identificador ou indice.\n", no->linha);
+        return;
+    }
+    fprintf(saida, "%s", no->filhos[0]->valor.valor_str);
+    fprintf(saida, "[");
+    emitirExpressao(no->filhos[1], saida);
+    fprintf(saida, "]");
+}
+
+void emitirInstanciacaoArray(NoAST *no, FILE *saida, int nivel) {
+    (void) nivel;
+    if (no == NULL)
+    {
+        fprintf(stderr, "Erro de geracao: no de instanciacao de array nulo.\n");
+        return;
+    }
+    if (no->num_filhos < 1 ||
+        no->filhos[0] == NULL) 
+    {
+        fprintf(stderr, "Erro de geracao na linha %d: instanciacao de array sem expressao de tamanho.\n", no->linha);
+        return;
+    }
+    const char *tipo = tipoBaseC(no->tipo_dado);
+    if (tipo == NULL)
+    {
+        fprintf(stderr, "Erro de geracao na linha %d: tipo base do array nao suportado.\n", no->linha);
+        return;
+    }
+
+    fprintf(saida, "(%s*)malloc((", tipo);
+    emitirExpressao(no->filhos[0], saida);
+    fprintf(saida, ") * sizeof(%s))", tipo);       
+}
