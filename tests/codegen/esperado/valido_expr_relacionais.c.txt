@@ -1,0 +1,27 @@
+int main(void) {
+    int a = 5;
+    int b = 10;
+    double x = 2.5;
+    bool igual = (a == b);
+    bool diferente = (a != b);
+    bool menor = (a < b);
+    bool menorIgual = (a <= 5);
+    bool maior = (b > a);
+    bool maiorIgual = (a >= b);
+    bool mista = (x > a);
+    bool composta = ((a + 1) < (b * 2));
+    bool comParenteses = ((a + b) > ((b - a) * 2));
+    printf("%d\n", a);
+    printf("%d\n", b);
+    printf("%g\n", x);
+    puts(igual ? "true" : "false");
+    puts(diferente ? "true" : "false");
+    puts(menor ? "true" : "false");
+    puts(menorIgual ? "true" : "false");
+    puts(maior ? "true" : "false");
+    puts(maiorIgual ? "true" : "false");
+    puts(mista ? "true" : "false");
+    puts(composta ? "true" : "false");
+    puts(comParenteses ? "true" : "false");
+    return 0;
+}

@@ -1,0 +1,17 @@
+int main(void) {
+    int i = 42;
+    double d = 3.14159;
+    double inteiro_como_real = 2.0;
+    bool t = true;
+    bool f = false;
+    const char * s = "texto com \"aspas\" e quebra\n";
+    const char * vazia = "";
+    printf("%d\n", i);
+    printf("%g\n", d);
+    printf("%g\n", inteiro_como_real);
+    puts(t ? "true" : "false");
+    puts(f ? "true" : "false");
+    puts(s);
+    puts(vazia);
+    return 0;
+}

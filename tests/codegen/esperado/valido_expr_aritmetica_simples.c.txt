@@ -1,0 +1,17 @@
+int main(void) {
+    int a = 7;
+    int b = 3;
+    int soma = (a + b);
+    int sub = (a - b);
+    int mult = (a * b);
+    int div = (a / b);
+    int resto = (a % b);
+    printf("%d\n", a);
+    printf("%d\n", b);
+    printf("%d\n", soma);
+    printf("%d\n", sub);
+    printf("%d\n", mult);
+    printf("%d\n", div);
+    printf("%d\n", resto);
+    return 0;
+}
