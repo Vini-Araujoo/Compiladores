@@ -86,6 +86,20 @@ __attribute__((weak)) void emitirScannerLeitura(NoAST *no, FILE *saida, int nive
     }
 }
 
+/* Stubs fracos auxiliares para linkagem isolada com codegen_decl.c */
+__attribute__((weak)) void emitirAcessoArray(NoAST *no, FILE *saida)
+{
+    (void)no;
+    (void)saida;
+}
+
+__attribute__((weak)) void emitirInstrucao(NoAST *no, FILE *saida, int nivel)
+{
+    (void)no;
+    (void)saida;
+    (void)nivel;
+}
+
 static char *lerArquivoTemporario(FILE *f)
 {
     fflush(f);
