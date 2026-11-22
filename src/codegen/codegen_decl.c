@@ -358,3 +358,28 @@ void emitirAtribuicao(NoAST *no, FILE *saida, int nivel)
     emitirExpressao(expr, saida);
     fprintf(saida, ";\n");
 }
+
+void emitirBloco(NoAST *no, FILE *saida, int nivel)
+{
+    if (no == NULL || saida == NULL)
+    {
+        return;
+    }
+
+    if (no->tipo_no != NO_BLOCO)
+    {
+        fprintf(stderr, "Erro de geracao na linha %d: no inesperado em emitirBloco.\n",
+                no->linha);
+        return;
+    }
+
+    emitirLinha(saida, nivel, "{");
+    for (int i = 0; i < no->num_filhos; i++)
+    {
+        if (no->filhos[i] != NULL)
+        {
+            emitirInstrucao(no->filhos[i], saida, nivel + 1);
+        }
+    }
+    emitirLinha(saida, nivel, "}");
+}
