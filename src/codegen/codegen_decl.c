@@ -233,3 +233,153 @@ void emitirDeclaracaoVariavel(NoAST *no, FILE *saida, int nivel)
 {
     emitirDeclaracaoInterna(no, TIPO_INDEFINIDO, 0, saida, nivel);
 }
+
+static int operadorAtribuicaoValido(const char *op)
+{
+    if (op == NULL)
+    {
+        return 0;
+    }
+    return strcmp(op, "=") == 0 ||
+           strcmp(op, "+=") == 0 ||
+           strcmp(op, "-=") == 0 ||
+           strcmp(op, "*=") == 0 ||
+           strcmp(op, "/=") == 0 ||
+           strcmp(op, "%=") == 0;
+}
+
+static int emitirLadoEsquerdoAtribuicao(NoAST *alvo, FILE *saida, int linha)
+{
+    if (alvo == NULL)
+    {
+        fprintf(stderr, "Erro de geracao na linha %d: alvo de atribuicao nulo.\n", linha);
+        return 0;
+    }
+
+    if (alvo->tipo_no == NO_IDENTIFICADOR)
+    {
+        if (alvo->valor.valor_str == NULL)
+        {
+            fprintf(stderr, "Erro de geracao na linha %d: identificador sem nome na atribuicao.\n", linha);
+            return 0;
+        }
+        fprintf(saida, "%s", alvo->valor.valor_str);
+        return 1;
+    }
+
+    if (alvo->tipo_no == NO_ACESSO_ARRAY)
+    {
+        emitirAcessoArray(alvo, saida);
+        return 1;
+    }
+
+    emitirExpressao(alvo, saida);
+    return 1;
+}
+
+void emitirAtribuicao(NoAST *no, FILE *saida, int nivel)
+{
+    if (no == NULL || saida == NULL)
+    {
+        return;
+    }
+
+    /* Comandos de incremento e decremento oriundos da regra atribuicao */
+    if (no->tipo_no == NO_INCREMENTO || no->tipo_no == NO_DECREMENTO ||
+        no->tipo_no == NO_INCREMENTO_ANTES || no->tipo_no == NO_DECREMENTO_ANTES)
+    {
+        if (no->num_filhos < 1 || no->filhos[0] == NULL)
+        {
+            fprintf(stderr, "Erro de geracao na linha %d: operacao de incremento/decremento sem operando.\n",
+                    no->linha);
+            return;
+        }
+        const char *op_inc = (no->tipo_no == NO_INCREMENTO || no->tipo_no == NO_INCREMENTO_ANTES)
+                                 ? "++"
+                                 : "--";
+        emitirIndentacao(saida, nivel);
+        if (no->tipo_no == NO_INCREMENTO_ANTES || no->tipo_no == NO_DECREMENTO_ANTES)
+        {
+            fprintf(saida, "%s", op_inc);
+            emitirLadoEsquerdoAtribuicao(no->filhos[0], saida, no->linha);
+        }
+        else
+        {
+            emitirLadoEsquerdoAtribuicao(no->filhos[0], saida, no->linha);
+            fprintf(saida, "%s", op_inc);
+        }
+        fprintf(saida, ";\n");
+        return;
+    }
+
+    if (no->tipo_no != NO_ATRIBUICAO)
+    {
+        fprintf(stderr, "Erro de geracao na linha %d: no inesperado em emitirAtribuicao.\n",
+                no->linha);
+        return;
+    }
+
+    if (no->num_filhos < 2 || no->filhos[0] == NULL || no->filhos[1] == NULL)
+    {
+        fprintf(stderr, "Erro de geracao na linha %d: atribuicao incompleta na AST.\n",
+                no->linha);
+        return;
+    }
+
+    NoAST *alvo = no->filhos[0];
+    NoAST *expr = no->filhos[1];
+
+    /* Caso especial: leitura de Scanner atribuida a variavel existente (ex.: x = sc.nextInt();) */
+    NoAST *leitura = obterLeituraScanner(expr);
+    if (leitura != NULL)
+    {
+        emitirScannerLeitura(leitura, saida, nivel);
+        return;
+    }
+
+    const char *op = (no->valor.operador[0] != '\0') ? no->valor.operador : "=";
+    if (!operadorAtribuicaoValido(op))
+    {
+        fprintf(stderr, "Erro de geracao na linha %d: operador de atribuicao invalido '%s'.\n",
+                no->linha, op);
+        return;
+    }
+
+    if (alvo->tipo_no == NO_IDENTIFICADOR && alvo->valor.valor_str == NULL)
+    {
+        fprintf(stderr, "Erro de geracao na linha %d: identificador sem nome na atribuicao.\n",
+                no->linha);
+        return;
+    }
+
+    emitirIndentacao(saida, nivel);
+    emitirLadoEsquerdoAtribuicao(alvo, saida, no->linha);
+    fprintf(saida, " %s ", op);
+    emitirExpressao(expr, saida);
+    fprintf(saida, ";\n");
+}
+
+void emitirBloco(NoAST *no, FILE *saida, int nivel)
+{
+    if (no == NULL || saida == NULL)
+    {
+        return;
+    }
+
+    if (no->tipo_no != NO_BLOCO)
+    {
+        fprintf(stderr, "Erro de geracao na linha %d: no inesperado em emitirBloco.\n",
+                no->linha);
+        return;
+    }
+
+    emitirLinha(saida, nivel, "{");
+    for (int i = 0; i < no->num_filhos; i++)
+    {
+        if (no->filhos[i] != NULL)
+        {
+            emitirInstrucao(no->filhos[i], saida, nivel + 1);
+        }
+    }
+    emitirLinha(saida, nivel, "}");
+}
