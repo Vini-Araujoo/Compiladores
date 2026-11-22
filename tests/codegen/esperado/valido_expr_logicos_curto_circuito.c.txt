@@ -1,0 +1,27 @@
+int main(void) {
+    int a = 3;
+    int b = 0;
+    bool flag = true;
+    bool r1 = ((a > 0) && (b < 10));
+    bool r2 = ((a > 5) || (b >= 0));
+    bool r3 = (!(flag));
+    bool r4 = (!(((a > 0) && (b < 10))));
+    bool r5 = (flag || ((a < 0) && (b < 0)));
+    bool r6 = ((flag || (a < 0)) && (b < 0));
+    bool r7 = ((b > 0) && ((a / b) > 1));
+    bool r8 = ((b <= 0) || ((a / b) > 1));
+    bool r9 = (((!((a < 0))) && (!(flag))) || (b < 0));
+    printf("%d\n", a);
+    printf("%d\n", b);
+    puts(flag ? "true" : "false");
+    puts(r1 ? "true" : "false");
+    puts(r2 ? "true" : "false");
+    puts(r3 ? "true" : "false");
+    puts(r4 ? "true" : "false");
+    puts(r5 ? "true" : "false");
+    puts(r6 ? "true" : "false");
+    puts(r7 ? "true" : "false");
+    puts(r8 ? "true" : "false");
+    puts(r9 ? "true" : "false");
+    return 0;
+}

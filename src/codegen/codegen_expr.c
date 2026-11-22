@@ -93,9 +93,24 @@ void emitirIdentificador(NoAST *no, FILE *saida)
     fputs(no->valor.valor_str, saida);
 }
 
-void emitirOpBinaria(NoAST *no, FILE *saida)
+static const char *const OPS_ARITMETICOS[] = {"+", "-", "*", "/", "%", NULL};
+static const char *const OPS_RELACIONAIS[] = {"==", "!=", "<", "<=", ">", ">=", NULL};
+static const char *const OPS_LOGICOS[] = {"&&", "||", NULL};
+
+static int operadorEm(const char *op, const char *const *lista)
 {
-    if (no->num_filhos != 2 || no->valor.operador[0] == '\0')
+    for (int i = 0; lista[i] != NULL; i++)
+    {
+        if (strcmp(op, lista[i]) == 0)
+            return 1;
+    }
+    return 0;
+}
+
+static void emitirBinarioParentizado(NoAST *no, FILE *saida)
+{
+    if (no->num_filhos != 2 || no->filhos[0] == NULL || no->filhos[1] == NULL ||
+        no->valor.operador[0] == '\0')
     {
         fprintf(stderr, "codegen: linha %d: operacao binaria malformada\n", no->linha);
         return;
@@ -107,13 +122,111 @@ void emitirOpBinaria(NoAST *no, FILE *saida)
     fputc(')', saida);
 }
 
+static void emitirOpAritmetica(NoAST *no, FILE *saida)
+{
+    emitirBinarioParentizado(no, saida);
+}
+
+static void emitirOpRelacional(NoAST *no, FILE *saida)
+{
+    emitirBinarioParentizado(no, saida);
+}
+
+static void emitirOpLogico(NoAST *no, FILE *saida)
+{
+    if (no->tipo_no == NO_OP_UNARIA)
+    {
+        if (no->num_filhos != 1 || no->filhos[0] == NULL)
+        {
+            fprintf(stderr, "codegen: linha %d: negacao sem operando\n", no->linha);
+            return;
+        }
+        fputs("(!(", saida);
+        emitirExpressao(no->filhos[0], saida);
+        fputs("))", saida);
+        return;
+    }
+    emitirBinarioParentizado(no, saida);
+}
+
+void emitirOpBinaria(NoAST *no, FILE *saida)
+{
+    const char *op = no->valor.operador;
+    if (operadorEm(op, OPS_ARITMETICOS))
+        emitirOpAritmetica(no, saida);
+    else if (operadorEm(op, OPS_RELACIONAIS))
+        emitirOpRelacional(no, saida);
+    else if (operadorEm(op, OPS_LOGICOS))
+        emitirOpLogico(no, saida);
+    else
+        fprintf(stderr, "codegen: linha %d: operador binario desconhecido \"%s\"\n", no->linha, op);
+}
+
+static void emitirIncDec(NoAST *operando, const char *op, int posfixo, FILE *saida)
+{
+    fputc('(', saida);
+    if (!posfixo)
+        fputs(op, saida);
+    emitirExpressao(operando, saida);
+    if (posfixo)
+        fputs(op, saida);
+    fputc(')', saida);
+}
+
+void emitirOpUnaria(NoAST *no, FILE *saida)
+{
+    if (no->num_filhos < 1 || no->filhos[0] == NULL)
+    {
+        fprintf(stderr, "codegen: linha %d: operacao unaria sem operando\n", no->linha);
+        return;
+    }
+    NoAST *operando = no->filhos[0];
+
+    switch (no->tipo_no)
+    {
+    case NO_INCREMENTO:
+        emitirIncDec(operando, "++", 1, saida);
+        return;
+    case NO_DECREMENTO:
+        emitirIncDec(operando, "--", 1, saida);
+        return;
+    case NO_INCREMENTO_ANTES:
+        emitirIncDec(operando, "++", 0, saida);
+        return;
+    case NO_DECREMENTO_ANTES:
+        emitirIncDec(operando, "--", 0, saida);
+        return;
+    default:
+        break;
+    }
+
+    const char *op = no->valor.operador;
+    if (strcmp(op, "!") == 0)
+    {
+        emitirOpLogico(no, saida);
+    }
+    else if (strcmp(op, "-") == 0 || strcmp(op, "+") == 0)
+    {
+        fputc('(', saida);
+        fputs(op, saida);
+        emitirExpressao(operando, saida);
+        fputc(')', saida);
+    }
+    else if (strcmp(op, "++") == 0 || strcmp(op, "--") == 0)
+    {
+        emitirIncDec(operando, op, no->posfixo, saida);
+    }
+    else
+    {
+        fprintf(stderr, "codegen: linha %d: operador unario desconhecido \"%s\"\n", no->linha, op);
+    }
+}
+
 void emitirExpressao(NoAST *no, FILE *saida)
 {
     if (no == NULL)
-    {
-        fprintf(stderr, "codegen: expressao nula\n");
         return;
-    }
+
     switch (no->tipo_no)
     {
     case NO_LITERAL_INT:
@@ -129,6 +242,19 @@ void emitirExpressao(NoAST *no, FILE *saida)
         break;
     case NO_OP_BINARIA:
         emitirOpBinaria(no, saida);
+        break;
+    case NO_OP_UNARIA:
+    case NO_INCREMENTO:
+    case NO_DECREMENTO:
+    case NO_INCREMENTO_ANTES:
+    case NO_DECREMENTO_ANTES:
+        emitirOpUnaria(no, saida);
+        break;
+    case NO_ACESSO_ARRAY:
+        emitirAcessoArray(no, saida);
+        break;
+    case NO_CHAMADA_METODO:
+        emitirChamadaMetodo(no, saida);
         break;
     default:
         fprintf(stderr, "codegen: linha %d: expressao nao suportada (tipo_no=%d)\n",

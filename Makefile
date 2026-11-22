@@ -14,7 +14,10 @@ PARSER_GENERATED_H := $(BUILD_DIR)/parser.tab.h
 PARSER_BINARY := $(BUILD_DIR)/parser
 
 SEMANTIC_BINARY := $(BUILD_DIR)/semantic
-.PHONY: all parser semantic test test-ast test-tabela test-semantic clean
+
+CODEGEN_TEST_BINARY := $(BUILD_DIR)/teste_codegen_expressoes
+
+.PHONY: all parser semantic test test-ast test-tabela test-semantic test-codegen clean
 
 all: parser
 
@@ -65,6 +68,13 @@ $(LEXER_GENERATED): $(LEXER_SOURCE) $(PARSER_GENERATED_H) | $(BUILD_DIR)
 
 $(BUILD_DIR):
 	mkdir -p $@
+
+test-codegen: $(CODEGEN_TEST_BINARY)
+	@bash tests/codegen/run-tests.sh
+	@echo "Todos os testes de geracao de codigo passaram com sucesso!"
+
+$(CODEGEN_TEST_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast/ast.c src/ast/ast.h src/semantic/tabela.c src/semantic/tabela.h src/semantic/semantica.c src/semantic/semantica.h src/codegen/codegen.h src/codegen/codegen_expr.c src/codegen/codegen_main.c tests/codegen/teste_codegen_expressoes.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -DANALISE_SEMANTICA $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast/ast.c src/semantic/tabela.c src/semantic/semantica.c src/codegen/codegen_expr.c src/codegen/codegen_main.c tests/codegen/teste_codegen_expressoes.c -o $@
 
 clean:
 	rm -rf $(BUILD_DIR)

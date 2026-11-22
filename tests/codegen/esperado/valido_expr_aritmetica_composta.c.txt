@@ -1,0 +1,25 @@
+int main(void) {
+    int a = 10;
+    int b = 4;
+    int c = 6;
+    int d = 2;
+    int r1 = ((a + b) * (c - d));
+    int r2 = (a - (b - c));
+    int r3 = ((a - b) - c);
+    int r4 = (a / (b * d));
+    int r5 = ((a % b) * c);
+    int r6 = (a * (b % c));
+    int r7 = ((a + (b * c)) - (d / 2));
+    printf("%d\n", a);
+    printf("%d\n", b);
+    printf("%d\n", c);
+    printf("%d\n", d);
+    printf("%d\n", r1);
+    printf("%d\n", r2);
+    printf("%d\n", r3);
+    printf("%d\n", r4);
+    printf("%d\n", r5);
+    printf("%d\n", r6);
+    printf("%d\n", r7);
+    return 0;
+}
