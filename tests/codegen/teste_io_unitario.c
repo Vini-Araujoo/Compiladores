@@ -1,3 +1,15 @@
+/*
+ * Teste unitario do modulo de I/O e arrays do codegen (src/codegen/codegen_io.c).
+ *
+ * Monta pequenas ASTs na mao, chama as funcoes emitir* e compara o texto C
+ * gerado com o esperado. Nao depende do parser nem do flex/bison.
+ *
+ * emitirExpressao (do codegen_expr.c) ainda pode nao existir: por isso este
+ * arquivo define uma versao "fraca" (weak). Quando o codegen_expr.c real for
+ * linkado junto, a definicao dele passa a valer e esta e ignorada.
+ *
+ * Mensagens em stderr nos casos de erro sao esperadas.
+ */
 #include "codegen.h"
 
 static int total = 0;
@@ -16,6 +28,12 @@ __attribute__((weak)) void emitirExpressao(NoAST *no, FILE *saida)
             break;
         case NO_LITERAL_STRING:
             fprintf(saida, "\"%s\"", no->valor.valor_str);
+            break;
+        case NO_ACESSO_ARRAY:
+            emitirAcessoArray(no, saida);
+            break;
+        case NO_INSTANCIACAO_ARRAY:
+            emitirInstanciacaoArray(no, saida, 0);
             break;
         case NO_OP_BINARIA:
             emitirExpressao(no->filhos[0], saida);
@@ -135,6 +153,42 @@ static void testarLeituraEm(const char *metodo, const char *destino, const char 
     conferir(nome, f, &buf, esperado);
 }
 
+static NoAST *acesso(NoAST *array, NoAST *indice)
+{
+    NoAST *n = criarNo(NO_ACESSO_ARRAY, 1);
+    adicionarFilho(n, array);
+    adicionarFilho(n, indice);
+    return n;
+}
+
+static NoAST *instArray(TipoDado base, NoAST *tamanho)
+{
+    NoAST *n = criarNo(NO_INSTANCIACAO_ARRAY, 1);
+    n->tipo_dado = base;
+    adicionarFilho(n, tamanho);
+    return n;
+}
+
+static void testarAcesso(const char *nome, NoAST *no, const char *esperado)
+{
+    char *buf;
+    size_t tam;
+    FILE *f = abrir(&buf, &tam);
+
+    emitirAcessoArray(no, f);
+    conferir(nome, f, &buf, esperado);
+}
+
+static void testarInstanciacao(const char *nome, NoAST *no, const char *esperado)
+{
+    char *buf;
+    size_t tam;
+    FILE *f = abrir(&buf, &tam);
+
+    emitirInstanciacaoArray(no, f, 1);
+    conferir(nome, f, &buf, esperado);
+}
+
 int main(void)
 {
     printf("== Scanner: scanf por metodo ==\n");
@@ -196,6 +250,34 @@ int main(void)
                 "\tprintf(\"%s\", (b) ? \"true\" : \"false\");\n");
     testarSaida("print sem argumento gera erro", NO_PRINT, NULL, "");
     testarSaida("println de tipo indefinido gera erro", NO_PRINTLN, id("v", TIPO_VOID), "");
+
+    printf("== Arrays: acesso indexado ==\n");
+    testarAcesso("acesso com indice literal", acesso(id("vetor", TIPO_ARRAY), litInt(0)), "vetor[0]");
+    testarAcesso("acesso com indice variavel", acesso(id("vetor", TIPO_ARRAY), id("i", TIPO_INT)), "vetor[i]");
+    testarAcesso("acesso com indice expressao",
+                 acesso(id("vetor", TIPO_ARRAY), bin("+", id("i", TIPO_INT), litInt(1))),
+                 "vetor[i + 1]");
+    testarAcesso("acesso com indice sendo outro acesso",
+                 acesso(id("vetor", TIPO_ARRAY), acesso(id("outro", TIPO_ARRAY), litInt(0))),
+                 "vetor[outro[0]]");
+    testarAcesso("acesso nulo gera erro", NULL, "");
+    testarAcesso("acesso sem indice gera erro", acesso(id("vetor", TIPO_ARRAY), NULL), "");
+    testarAcesso("acesso sem identificador gera erro", acesso(litInt(1), litInt(0)), "");
+    testarAcesso("acesso com identificador sem nome gera erro",
+                 acesso(id(NULL, TIPO_ARRAY), litInt(0)), "");
+
+    printf("== Arrays: instanciacao com malloc ==\n");
+    testarInstanciacao("new int[10]", instArray(TIPO_INT, litInt(10)),
+                       "(int*)malloc((10) * sizeof(int))");
+    testarInstanciacao("new double[n + 1]",
+                       instArray(TIPO_DOUBLE, bin("+", id("n", TIPO_INT), litInt(1))),
+                       "(double*)malloc((n + 1) * sizeof(double))");
+    testarInstanciacao("new String[5]", instArray(TIPO_STRING, litInt(5)),
+                       "(char**)malloc((5) * sizeof(char*))");
+    testarInstanciacao("instanciacao nula gera erro", NULL, "");
+    testarInstanciacao("instanciacao sem tamanho gera erro", instArray(TIPO_INT, NULL), "");
+    testarInstanciacao("instanciacao de tipo nao suportado gera erro",
+                       instArray(TIPO_BOOLEAN, litInt(3)), "");
 
     printf("\n%d testes, %d falha(s)\n", total, falhas);
     return falhas == 0 ? 0 : 1;
