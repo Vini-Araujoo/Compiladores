@@ -59,5 +59,18 @@ executar_io_positivo "$TEST_DIR/valido_io_println_todos_tipos.java" \
     'NO_PRINTLN$' 'NO_PRINT$' \
     'NO_LITERAL_STRING \("literal"\)'
 
+echo "=== Testes de arrays do codegen (entrada aceita pelo parser) ==="
+executar_io_positivo "$TEST_DIR/valido_array_alocacao_dinamica.java" \
+    'NO_INSTANCIACAO_ARRAY' \
+    'NO_ATRIBUICAO'
+executar_io_positivo "$TEST_DIR/valido_array_preenchimento_laco_for.java" \
+    'NO_INSTANCIACAO_ARRAY' \
+    'NO_FOR' \
+    'NO_ACESSO_ARRAY'
+executar_io_positivo "$TEST_DIR/valido_array_leitura_indices.java" \
+    'NO_INSTANCIACAO_ARRAY' \
+    'NO_ACESSO_ARRAY' \
+    'NO_ATRIBUICAO'
+
 printf 'Resumo: %d passou, %d falhou.\n' "$passou" "$falhou"
 (( falhou == 0 ))
