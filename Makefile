@@ -18,6 +18,7 @@ CODEGEN_TEST_BINARY := $(BUILD_DIR)/teste_codegen_expressoes
 CODEGEN_IO_BINARY := $(BUILD_DIR)/teste_io_unitario
 CODEGEN_DECL_BINARY := $(BUILD_DIR)/teste_decl_unitario
 CODEGEN_ATRIB_BINARY := $(BUILD_DIR)/teste_atrib_bloco_unitario
+CODEGEN_METODO_BINARY := $(BUILD_DIR)/teste_metodo_unitario
 
 .PHONY: all parser semantic test test-ast test-tabela test-semantic test-codegen clean
 
@@ -59,7 +60,8 @@ test-semantic: $(PARSER_BINARY) semantic | $(BUILD_DIR)
 	@bash tests/semantic/run-tests.sh
 	@echo "Todos os testes semânticos passaram com sucesso!"
 
-test-codegen: parser $(CODEGEN_TEST_BINARY) $(CODEGEN_IO_BINARY) $(CODEGEN_DECL_BINARY) $(CODEGEN_ATRIB_BINARY) | $(BUILD_DIR)
+test-codegen: parser $(CODEGEN_TEST_BINARY) $(CODEGEN_IO_BINARY) $(CODEGEN_DECL_BINARY) $(CODEGEN_ATRIB_BINARY) $(CODEGEN_METODO_BINARY) | $(BUILD_DIR)
+	@$(CODEGEN_METODO_BINARY)
 	@$(CODEGEN_DECL_BINARY)
 	@$(CODEGEN_ATRIB_BINARY)
 	@$(CODEGEN_IO_BINARY)
@@ -75,17 +77,20 @@ $(PARSER_GENERATED_C) $(PARSER_GENERATED_H): $(PARSER_SOURCE) | $(BUILD_DIR)
 $(LEXER_GENERATED): $(LEXER_SOURCE) $(PARSER_GENERATED_H) | $(BUILD_DIR)
 	$(FLEX) -o $(LEXER_GENERATED) $(LEXER_SOURCE)
 
-$(CODEGEN_TEST_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast/ast.c src/ast/ast.h src/semantic/tabela.c src/semantic/tabela.h src/semantic/semantica.c src/semantic/semantica.h src/codegen/codegen.h src/codegen/codegen_expr.c src/codegen/codegen_main.c tests/codegen/teste_codegen_expressoes.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -DANALISE_SEMANTICA $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast/ast.c src/semantic/tabela.c src/semantic/semantica.c src/codegen/codegen_expr.c src/codegen/codegen_main.c tests/codegen/teste_codegen_expressoes.c -o $@
+$(CODEGEN_TEST_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast/ast.c src/ast/ast.h src/semantic/tabela.c src/semantic/tabela.h src/semantic/semantica.c src/semantic/semantica.h src/codegen/codegen.h src/codegen/codegen_expr.c src/codegen/codegen_decl.c src/codegen/codegen_io.c src/codegen/codegen_main.c tests/codegen/teste_codegen_expressoes.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -DANALISE_SEMANTICA $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast/ast.c src/semantic/tabela.c src/semantic/semantica.c src/codegen/codegen_expr.c src/codegen/codegen_decl.c src/codegen/codegen_io.c src/codegen/codegen_main.c tests/codegen/teste_codegen_expressoes.c -o $@
 
-$(CODEGEN_IO_BINARY): tests/codegen/teste_io_unitario.c src/codegen/codegen_main.c src/codegen/codegen_io.c src/ast/ast.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) tests/codegen/teste_io_unitario.c src/codegen/codegen_main.c src/codegen/codegen_io.c src/ast/ast.c -o $@
+$(CODEGEN_IO_BINARY): tests/codegen/teste_io_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/codegen/codegen_io.c src/ast/ast.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) tests/codegen/teste_io_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/codegen/codegen_io.c src/ast/ast.c -o $@
 
 $(CODEGEN_DECL_BINARY): tests/codegen/teste_decl_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/ast/ast.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) tests/codegen/teste_decl_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/ast/ast.c -o $@
 
 $(CODEGEN_ATRIB_BINARY): tests/codegen/teste_atrib_bloco_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/ast/ast.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) tests/codegen/teste_atrib_bloco_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/ast/ast.c -o $@
+
+$(CODEGEN_METODO_BINARY): tests/codegen/teste_metodo_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/ast/ast.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) tests/codegen/teste_metodo_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/ast/ast.c -o $@
 
 $(BUILD_DIR):
 	mkdir -p $@
