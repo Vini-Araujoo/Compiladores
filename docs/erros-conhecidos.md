@@ -42,3 +42,19 @@ produziam erro de sintaxe.
 Ao rodar os testes unitários de declarações (`teste_decl_unitario.c`) e blocos (`teste_atrib_bloco_unitario.c`), ocorriam erros de símbolos indefinidos (`undefined reference to emitirPrint / emitirPrintln / emitirIf`).
 * **Causa:** O orquestrador central `codegen_main.c` chama funções de módulos que não estavam sendo compilados juntos nos alvos de teste isolados dos outros integrantes.
 * **Resolução:** Inclusão de stubs fracos (`__attribute__((weak))`) em `codegen_main.c` e `codegen_fluxo.c`, permitindo que testes unitários continuem linkando de forma isolada, enquanto no compilador completo as implementações reais fortes assumem o controle.
+
+---
+
+## 6. Concatenação de String com Primitivos via `+` (Aritmética de Ponteiros em C)
+Ao executar um código Java com concatenação entre `String` e número inteiro, como:
+```java
+String nome = "asdasd";
+int num = 2;
+System.out.println(nome + num);
+```
+O programa executável em C imprimiu inesperadamente:
+```text
+dasd
+```
+* **Causa:** Em Java, o operador `+` envolvendo ao menos uma `String` realiza sobrecarga para **concatenação textual** (esperava-se `"asdasd2"`). No entanto, o gerador de expressões aritméticas traduz diretamente `+` para o operador `+` de C (`(nome + num)`). Em C, somar um ponteiro (`char *nome`) com um inteiro (`int num`) é interpretado como **aritmética de ponteiros** (deslocamento de 2 bytes a partir do início da string), fazendo com que o ponteiro pule os dois primeiros caracteres (`'a'`, `'s'`) e aponte para `"dasd"`.
+* **Resolução recomendada:** Para suportar concatenação textual no C gerado, seria necessário alocar um buffer temporário e utilizar funções de formatação como `snprintf` ou `strcat`, ou manter documentado que concatenação heterogênea via operador binário `+` puro é uma limitação da tradução procedural direta.
