@@ -74,20 +74,6 @@ static NoAST *cria_no_literal_bool(int valor) {
     return no;
 }
 
-/*
- * Stub (Issue 9.1): no generico para as formas de expressao que pertencem a
- * outras issues (chamadas de metodo e leitura do Scanner).
- */
-static NoAST *cria_no_expressao_generica(NoAST *filho1, NoAST *filho2) {
-    NoAST *no = criarNo(NO_EXPRESSAO, yylineno);
-    if (filho1) {
-        adicionarFilho(no, filho1);
-    }
-    if (filho2) {
-        adicionarFilho(no, filho2);
-    }
-    return no;
-}
 
 static NoAST *cria_no_atribuicao(const char *operador, NoAST *alvo, NoAST *expressao) {
     NoAST *no = criarNo(NO_ATRIBUICAO, alvo ? alvo->linha : yylineno);
@@ -255,7 +241,7 @@ static void adicionar_declaracoes_a_pai(NoAST *pai, NoAST *decls) {
 %type <no> atribuicao comando_io repeticao comando_salto
 %type <no> expressao comando_return comando_switch casos_switch case_switch
 %type <no> default_switch declaracao_metodo comando_print argumento_opcional
-%type <no> acesso_array leitura_scanner chamada_metodo
+%type <no> acesso_array leitura_scanner chamada_metodo argumentos_opcionais lista_argumentos
 %type <no> instanciacao
 %type <text> metodo_scanner
 %type <no> atribuicao_for condicao_for incremento_for
@@ -748,19 +734,48 @@ metodo_scanner:
 
 chamada_metodo:
       ID TOKEN_ABRE_PAR argumentos_opcionais TOKEN_FECHA_PAR
-        { free($1); $$ = cria_no_expressao_generica(NULL, NULL); }
+        {
+            $$ = criarNo(NO_CHAMADA_METODO, yylineno);
+            $$->valor.valor_str = $1;
+            if ($3 != NULL) {
+                for (int i = 0; i < $3->num_filhos; i++) {
+                    adicionarFilho($$, $3->filhos[i]);
+                }
+                free($3->filhos);
+                free($3);
+            }
+        }
     | ID TOKEN_PONTO ID TOKEN_ABRE_PAR argumentos_opcionais TOKEN_FECHA_PAR
-        { free($1); free($3); $$ = cria_no_expressao_generica(NULL, NULL); }
+        {
+            free($1);
+            $$ = criarNo(NO_CHAMADA_METODO, yylineno);
+            $$->valor.valor_str = $3;
+            if ($5 != NULL) {
+                for (int i = 0; i < $5->num_filhos; i++) {
+                    adicionarFilho($$, $5->filhos[i]);
+                }
+                free($5->filhos);
+                free($5);
+            }
+        }
     ;
 
 argumentos_opcionais:
-      %empty
-    | lista_argumentos
+      %empty { $$ = NULL; }
+    | lista_argumentos { $$ = $1; }
     ;
 
 lista_argumentos:
       expressao
+        {
+            $$ = criarNo(NO_PARAMETROS, yylineno);
+            adicionarFilho($$, $1);
+        }
     | lista_argumentos TOKEN_VIRGULA expressao
+        {
+            adicionarFilho($1, $3);
+            $$ = $1;
+        }
     ;
 
 comando_return:
