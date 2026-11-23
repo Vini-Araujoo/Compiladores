@@ -4,84 +4,107 @@
 #include "ast.h"
 #include "tipos.h"
 
-
 #ifndef TABELA_INTEGRADA
-TipoDado buscarTipoSimboloMock(char *nome) {
-    if (nome && strcmp(nome, "flag") == 0) return TIPO_BOOLEAN;
-    if (nome && strcmp(nome, "taxa") == 0) return TIPO_DOUBLE;
-    return TIPO_INT; 
+TipoDado buscarTipoSimboloMock(char *nome)
+{
+    if (nome && strcmp(nome, "flag") == 0)
+        return TIPO_BOOLEAN;
+    if (nome && strcmp(nome, "taxa") == 0)
+        return TIPO_DOUBLE;
+    return TIPO_INT;
 }
 #endif
 
-static TipoDado tipoDoIdentificador(char *nome) {
-    if (!nome) {
+static TipoDado tipoDoIdentificador(char *nome)
+{
+    if (!nome)
+    {
         return TIPO_INDEFINIDO;
     }
-    if (strcmp(nome, "varInexistente") == 0) {
+    if (strcmp(nome, "varInexistente") == 0)
+    {
         return TIPO_INDEFINIDO;
     }
     return buscarTipoSimboloMock(nome);
 }
 
-static int ehNumerico(TipoDado tipo) {
+static int ehNumerico(TipoDado tipo)
+{
     return tipo == TIPO_BYTE || tipo == TIPO_SHORT || tipo == TIPO_CHAR ||
            tipo == TIPO_INT || tipo == TIPO_LONG || tipo == TIPO_FLOAT ||
            tipo == TIPO_DOUBLE;
 }
 
-static TipoDado promocaoNumerica(TipoDado esquerda, TipoDado direita) {
-    if (!ehNumerico(esquerda) || !ehNumerico(direita)) return TIPO_INDEFINIDO;
-    if (esquerda == TIPO_DOUBLE || direita == TIPO_DOUBLE) return TIPO_DOUBLE;
-    if (esquerda == TIPO_FLOAT || direita == TIPO_FLOAT) return TIPO_FLOAT;
-    if (esquerda == TIPO_LONG || direita == TIPO_LONG) return TIPO_LONG;
+static TipoDado promocaoNumerica(TipoDado esquerda, TipoDado direita)
+{
+    if (!ehNumerico(esquerda) || !ehNumerico(direita))
+        return TIPO_INDEFINIDO;
+    if (esquerda == TIPO_DOUBLE || direita == TIPO_DOUBLE)
+        return TIPO_DOUBLE;
+    if (esquerda == TIPO_FLOAT || direita == TIPO_FLOAT)
+        return TIPO_FLOAT;
+    if (esquerda == TIPO_LONG || direita == TIPO_LONG)
+        return TIPO_LONG;
     return TIPO_INT;
 }
 
-static int verificaDivisaoPorZero(NoAST *no_dir, const char *op) {
-    if (strcmp(op, "/") == 0 || strcmp(op, "%") == 0) {
-        if (no_dir->tipo_no == NO_LITERAL_INT && no_dir->valor.valor_int == 0) {
+static int verificaDivisaoPorZero(NoAST *no_dir, const char *op)
+{
+    if (strcmp(op, "/") == 0 || strcmp(op, "%") == 0)
+    {
+        if (no_dir->tipo_no == NO_LITERAL_INT && no_dir->valor.valor_int == 0)
+        {
             return 1;
         }
-        if (no_dir->tipo_no == NO_LITERAL_DOUBLE && no_dir->valor.valor_double == 0.0) {
+        if (no_dir->tipo_no == NO_LITERAL_DOUBLE && no_dir->valor.valor_double == 0.0)
+        {
             return 1;
         }
     }
     return 0;
 }
 
-static TipoDado inferirOperacaoBinaria(NoAST *no) {
+static TipoDado inferirOperacaoBinaria(NoAST *no)
+{
     TipoDado esquerda = inferirTipoExpressao(no->filhos[0]);
     TipoDado direita = inferirTipoExpressao(no->filhos[1]);
     const char *op = no->valor.operador;
 
-    if (strcmp(op, "&&") == 0 || strcmp(op, "||") == 0) {
-        if (esquerda != TIPO_BOOLEAN || direita != TIPO_BOOLEAN) {
+    if (strcmp(op, "&&") == 0 || strcmp(op, "||") == 0)
+    {
+        if (esquerda != TIPO_BOOLEAN || direita != TIPO_BOOLEAN)
+        {
             fprintf(stderr, "Erro semantico na linha %d: Operador logico '%s' aplicado a tipos incompativeis.\n", no->linha, op);
             return TIPO_INDEFINIDO;
         }
         return TIPO_BOOLEAN;
     }
-    
-    if (strcmp(op, "<") == 0 || strcmp(op, ">") == 0 || 
-        strcmp(op, "<=") == 0 || strcmp(op, ">=") == 0) {
-        if (!ehNumerico(esquerda) || !ehNumerico(direita)) {
+
+    if (strcmp(op, "<") == 0 || strcmp(op, ">") == 0 ||
+        strcmp(op, "<=") == 0 || strcmp(op, ">=") == 0)
+    {
+        if (!ehNumerico(esquerda) || !ehNumerico(direita))
+        {
             fprintf(stderr, "Erro semantico na linha %d: Operador relacional '%s' aplicado a tipos incompativeis (esperava numericos).\n", no->linha, op);
             return TIPO_INDEFINIDO;
         }
         return TIPO_BOOLEAN;
     }
 
-    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0 || 
-        strcmp(op, "*") == 0 || strcmp(op, "/") == 0 || strcmp(op, "%") == 0) {
-        
-        if (verificaDivisaoPorZero(no->filhos[1], op)) {
+    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0 ||
+        strcmp(op, "*") == 0 || strcmp(op, "/") == 0 || strcmp(op, "%") == 0)
+    {
+
+        if (verificaDivisaoPorZero(no->filhos[1], op))
+        {
             fprintf(stderr, "Erro semantico na linha %d: Divisao literal por zero detectada na analise estatica.\n", no->linha);
             return TIPO_INDEFINIDO;
         }
 
-        if (!ehNumerico(esquerda) || !ehNumerico(direita)) {
-             fprintf(stderr, "Erro semantico na linha %d: Operador aritmetico '%s' aplicado a tipos incompativeis.\n", no->linha, op);
-             return TIPO_INDEFINIDO;
+        if (!ehNumerico(esquerda) || !ehNumerico(direita))
+        {
+            fprintf(stderr, "Erro semantico na linha %d: Operador aritmetico '%s' aplicado a tipos incompativeis.\n", no->linha, op);
+            return TIPO_INDEFINIDO;
         }
         return promocaoNumerica(esquerda, direita);
     }
@@ -89,17 +112,21 @@ static TipoDado inferirOperacaoBinaria(NoAST *no) {
     return promocaoNumerica(esquerda, direita);
 }
 
-static TipoDado inferirOperacaoUnaria(NoAST *no) {
+static TipoDado inferirOperacaoUnaria(NoAST *no)
+{
     TipoDado operando = inferirTipoExpressao(no->filhos[0]);
     const char *op = no->valor.operador;
 
-    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0 || 
-        strcmp(op, "++") == 0 || strcmp(op, "--") == 0) {
-        if (!ehNumerico(operando)) {
-             fprintf(stderr, "Erro semantico na linha %d: Operador aritmetico unario '%s' aplicado a tipo nao-numerico.\n", no->linha, op);
-             return TIPO_INDEFINIDO;
+    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0 ||
+        strcmp(op, "++") == 0 || strcmp(op, "--") == 0)
+    {
+        if (!ehNumerico(operando))
+        {
+            fprintf(stderr, "Erro semantico na linha %d: Operador aritmetico unario '%s' aplicado a tipo nao-numerico.\n", no->linha, op);
+            return TIPO_INDEFINIDO;
         }
-        if (operando == TIPO_BYTE || operando == TIPO_SHORT || operando == TIPO_CHAR) {
+        if (operando == TIPO_BYTE || operando == TIPO_SHORT || operando == TIPO_CHAR)
+        {
             return TIPO_INT;
         }
         return operando;
@@ -108,44 +135,72 @@ static TipoDado inferirOperacaoUnaria(NoAST *no) {
     return operando;
 }
 
-TipoDado inferirTipoExpressao(NoAST *expr) {
-    if (!expr) return TIPO_INDEFINIDO;
+TipoDado inferirTipoExpressao(NoAST *expr)
+{
+    if (!expr)
+        return TIPO_INDEFINIDO;
 
     TipoDado tipo = TIPO_INDEFINIDO;
 
-    switch (expr->tipo_no) {
-        case NO_LITERAL_INT: tipo = TIPO_INT; break;
-        case NO_LITERAL_DOUBLE: tipo = TIPO_DOUBLE; break;
-        case NO_LITERAL_FLOAT: tipo = TIPO_FLOAT; break;
-        case NO_LITERAL_CHAR: tipo = TIPO_CHAR; break;
-        case NO_LITERAL_STRING: tipo = TIPO_STRING; break;
-        case NO_LITERAL_BOOL: tipo = TIPO_BOOLEAN; break;
-        case NO_IDENTIFICADOR: tipo = tipoDoIdentificador(expr->valor.valor_str); break;
-        case NO_OP_BINARIA: tipo = inferirOperacaoBinaria(expr); break;
-        case NO_OP_UNARIA: tipo = inferirOperacaoUnaria(expr); break;
-        default:
-            if (expr->tipo_dado != TIPO_INDEFINIDO) {
-                tipo = expr->tipo_dado;
-            } else {
-                for (int i = 0; i < expr->num_filhos; i++) {
-                     inferirTipoExpressao(expr->filhos[i]);
-                }
+    switch (expr->tipo_no)
+    {
+    case NO_LITERAL_INT:
+        tipo = TIPO_INT;
+        break;
+    case NO_LITERAL_DOUBLE:
+        tipo = TIPO_DOUBLE;
+        break;
+    case NO_LITERAL_FLOAT:
+        tipo = TIPO_FLOAT;
+        break;
+    case NO_LITERAL_CHAR:
+        tipo = TIPO_CHAR;
+        break;
+    case NO_LITERAL_STRING:
+        tipo = TIPO_STRING;
+        break;
+    case NO_LITERAL_BOOL:
+        tipo = TIPO_BOOLEAN;
+        break;
+    case NO_IDENTIFICADOR:
+        tipo = tipoDoIdentificador(expr->valor.valor_str);
+        break;
+    case NO_OP_BINARIA:
+        tipo = inferirOperacaoBinaria(expr);
+        break;
+    case NO_OP_UNARIA:
+        tipo = inferirOperacaoUnaria(expr);
+        break;
+    default:
+        if (expr->tipo_dado != TIPO_INDEFINIDO)
+        {
+            tipo = expr->tipo_dado;
+        }
+        else
+        {
+            for (int i = 0; i < expr->num_filhos; i++)
+            {
+                inferirTipoExpressao(expr->filhos[i]);
             }
-            break;
+        }
+        break;
     }
 
-    if (expr->tipo_no == NO_LITERAL_INT || expr->tipo_no == NO_LITERAL_DOUBLE || 
+    if (expr->tipo_no == NO_LITERAL_INT || expr->tipo_no == NO_LITERAL_DOUBLE ||
         expr->tipo_no == NO_LITERAL_FLOAT || expr->tipo_no == NO_LITERAL_CHAR ||
         expr->tipo_no == NO_LITERAL_STRING ||
         expr->tipo_no == NO_LITERAL_BOOL || expr->tipo_no == NO_IDENTIFICADOR ||
-        expr->tipo_no == NO_OP_BINARIA || expr->tipo_no == NO_OP_UNARIA) {
+        expr->tipo_no == NO_OP_BINARIA || expr->tipo_no == NO_OP_UNARIA)
+    {
         expr->tipo_dado = tipo;
     }
     return tipo;
 }
 
-static int ehNoExpressao(const NoAST *no) {
-    switch (no->tipo_no) {
+static int ehNoExpressao(const NoAST *no)
+{
+    switch (no->tipo_no)
+    {
     case NO_OP_BINARIA:
     case NO_OP_UNARIA:
     case NO_IDENTIFICADOR:
@@ -168,18 +223,23 @@ static int ehNoExpressao(const NoAST *no) {
     }
 }
 
-int analisarTiposAST(NoAST *raiz) {
-    if (!raiz) return 0;
+int analisarTiposAST(NoAST *raiz)
+{
+    if (!raiz)
+        return 0;
     int erros = 0;
 
-    if (ehNoExpressao(raiz)) {
-        if (inferirTipoExpressao(raiz) == TIPO_INDEFINIDO) {
+    if (ehNoExpressao(raiz))
+    {
+        if (inferirTipoExpressao(raiz) == TIPO_INDEFINIDO)
+        {
             erros++;
         }
         return erros;
     }
 
-    for (int i = 0; i < raiz->num_filhos; i++) {
+    for (int i = 0; i < raiz->num_filhos; i++)
+    {
         erros += analisarTiposAST(raiz->filhos[i]);
     }
     return erros;
