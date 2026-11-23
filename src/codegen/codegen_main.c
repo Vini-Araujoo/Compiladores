@@ -268,8 +268,37 @@ void emitirInstrucao(NoAST *no, FILE *saida, int nivel)
 
 void gerarCodigoC(NoAST *raiz, FILE *saida)
 {
-    (void)raiz;
-    (void)saida;
+    if (raiz != NULL && saida != NULL)
+    {
+        emitirCabecalho(saida);
+
+        // se a raiz já for direto um nó de método (em testes avulsos)
+        if (raiz->tipo_no == NO_METODO)
+        {
+            emitirMetodo(raiz, saida, 0);
+            return;
+        }
+
+        //  emite todas as variáveis globais no topo do arquivo C
+        for (int i = 0; i < raiz->num_filhos; i++)
+        {
+            NoAST *membro = raiz->filhos[i];
+            if (membro != NULL && membro->tipo_no == NO_DECL_VARIAVEL)
+            {
+                emitirDeclaracaoVariavel(membro, saida, 0);
+            }
+        }
+
+        //  emite todos os métodos da classe
+        for (int i = 0; i < raiz->num_filhos; i++)
+        {
+            NoAST *membro = raiz->filhos[i];
+            if (membro != NULL && membro->tipo_no == NO_METODO)
+            {
+                emitirMetodo(membro, saida, 0);
+            }
+        }
+    }
 }
 
 /*
