@@ -16,6 +16,9 @@ Este documento lista as funcionalidades e construções da linguagem Java padrã
 
 ## 2. Tipos e Manipulação de Arrays
 
+* **Declaração de Variáveis do Tipo Array:**
+  * Não há suporte sintático na gramática (`parser.y`) para declarar variáveis locais ou de classe como vetores. Ambas as formas Java `int[] v;` e estilo C `int v[];` geram erro de sintaxe (*syntax error*).
+  * O uso de colchetes na declaração é aceito **exclusivamente na lista de parâmetros de métodos** (ex.: `String[] args` ou `int[] param`), na expressão de alocação `new int[N]` e na expressão de indexação `v[i]`.
 * **Instanciação de Arrays de outros tipos primitivos via `new`:**
   * O parser aceita instanciação com `new` apenas para `int`, `double` e `String` (ex.: `new int[10]`, `new double[5]`, `new String[3]`).
   * Instanciação dinâmica com `new` para tipos como `float`, `boolean`, `char`, `long`, `byte` e `short` (ex.: `new boolean[10]`) não está contemplada na regra `tipo_base` da gramática.
@@ -35,6 +38,7 @@ Este documento lista as funcionalidades e construções da linguagem Java padrã
 * **Operador Ternário:** A construção condicional ternária `condicao ? valor1 : valor2` não está presente na gramática.
 * **Operador `instanceof`:** Não está presente na linguagem.
 * **Casting Explícito de Tipos:** Conversões manuais de tipo na sintaxe `(int) expressao` ou `(double) expressao` não possuem regras no parser (o compilador realiza apenas conversões implícitas de alargamento numérico / widening).
+* **Concatenação de Strings com outros Tipos (`+`):** Em Java, o operador `+` envolvendo `String` realiza concatenação e conversão dinâmica de primitivos (ex.: `"valor: " + x`). Como o compilador gera código C puro sem sobrecarga de operadores ou runtime complexo de strings, o operador `+` é emitido diretamente em C. Em C, somar `char*` com `int` resulta em aritmética de ponteiros (deslocamento de endereço de memória) em vez de concatenação textual. A impressão de múltiplos tipos na mesma linha deve ser realizada encadeando `System.out.print(...)` seguido de `System.out.println(...)`.
 
 ---
 
@@ -49,7 +53,7 @@ Este documento lista as funcionalidades e construções da linguagem Java padrã
 
 ## 5. Bibliotecas e Pacotes (I/O)
 
-* **Importação de Pacotes:** Não há suporte a declarações `import` ou `package`.
+* **Importação de Pacotes:** Não há suporte a declarações `import` ou `package`. Qualquer linha com `import` (inclusive o habitual `import java.util.Scanner;`) gera erro sintático logo no início da análise. No compilador, tipos como `Scanner` e comandos como `System.out` são tratados como primitivas nativas e não requerem importação.
 * **Classes da API Padrão Java:**
   * Suporte restrito a `System.out.print`, `System.out.println` e instanciação padrão `new Scanner(System.in)`.
   * Não há suporte a outras classes da biblioteca padrão (ex.: `Math`, `ArrayList`, `List`, `HashMap`, `String.format`, leitura de arquivos via `FileReader`, etc.).
