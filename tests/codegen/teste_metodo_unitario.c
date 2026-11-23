@@ -6,23 +6,9 @@
 #include "codegen.h"
 #include "ast.h"
 
-/* Stubs fracos para dependencias externas do codegen_decl */
-void emitirExpressao(NoAST *no, FILE *saida) { (void)no; (void)saida; }
-void emitirScannerLeitura(NoAST *no, FILE *saida, int nivel) { (void)no; (void)saida; (void)nivel; }
-void emitirAcessoArray(NoAST *no, FILE *saida) { (void)no; (void)saida; }
-
 static int total = 0;
 static int passou = 0;
 static int falhas = 0;
-
-/* Stub de emitirInstrucao para testar se os comandos do corpo sao chamados */
-static int instrucoes_chamadas = 0;
-void emitirInstrucao(NoAST *no, FILE *saida, int nivel)
-{
-    if (no == NULL) return;
-    instrucoes_chamadas++;
-    emitirLinha(saida, nivel, "/* comando executado */");
-}
 
 static char *lerArquivoTemporario(FILE *f)
 {
@@ -154,8 +140,6 @@ static void teste_metodo_com_parametros(void)
 
 static void teste_metodo_com_corpo(void)
 {
-    instrucoes_chamadas = 0;
-
     NoAST *no_metodo = criarNo(NO_METODO, 30);
     no_metodo->valor.valor_str = strdup("executar");
     no_metodo->tipo_dado = TIPO_VOID;
@@ -163,8 +147,8 @@ static void teste_metodo_com_corpo(void)
     NoAST *params = criarNo(NO_PARAMETROS, 30);
     NoAST *corpo = criarNo(NO_BLOCO, 30);
 
-    NoAST *cmd1 = criarNo(NO_EXPRESSAO, 31);
-    NoAST *cmd2 = criarNo(NO_EXPRESSAO, 32);
+    NoAST *cmd1 = criarNo(NO_BREAK, 31);
+    NoAST *cmd2 = criarNo(NO_CONTINUE, 32);
     adicionarFilho(corpo, cmd1);
     adicionarFilho(corpo, cmd2);
 
@@ -179,24 +163,49 @@ static void teste_metodo_com_corpo(void)
 
     const char *esperado =
         "void executar() {\n"
-        "\t/* comando executado */\n"
-        "\t/* comando executado */\n"
+        "\tbreak;\n"
+        "\tcontinue;\n"
         "}\n\n";
 
     conferir("metodo percorre corpo e instrucoes", saida, esperado);
-    assert(instrucoes_chamadas == 2);
 
     free(saida);
     liberarAST(no_metodo);
 }
 
+static void teste_chamada_metodo(void)
+{
+    NoAST *chamada = criarNo(NO_CHAMADA_METODO, 40);
+    chamada->valor.valor_str = strdup("soma");
+
+    NoAST *arg1 = criarNo(NO_LITERAL_INT, 40);
+    arg1->valor.valor_int = 10;
+    adicionarFilho(chamada, arg1);
+
+    NoAST *arg2 = criarNo(NO_LITERAL_INT, 40);
+    arg2->valor.valor_int = 20;
+    adicionarFilho(chamada, arg2);
+
+    FILE *f = tmpfile();
+    emitirChamadaMetodo(chamada, f);
+
+    char *saida = lerArquivoTemporario(f);
+    fclose(f);
+
+    conferir("emitirChamadaMetodo soma(10, 20)", saida, "soma(10, 20)");
+
+    free(saida);
+    liberarAST(chamada);
+}
+
 int main(void)
 {
-    printf("== Testes Unitarios de emitirMetodo (codegen_main.c) ==\n");
+    printf("== Testes Unitarios de emitirMetodo e emitirChamadaMetodo ==\n");
     teste_main_vazio();
     teste_metodo_sem_parametros();
     teste_metodo_com_parametros();
     teste_metodo_com_corpo();
+    teste_chamada_metodo();
 
     printf("\nResumo: %d passou, %d falhou (Total: %d)\n", passou, falhas, total);
     return falhas > 0 ? 1 : 0;

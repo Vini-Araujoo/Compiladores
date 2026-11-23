@@ -40,6 +40,7 @@ void emitirOpUnaria(NoAST *no, FILE *saida);
 const char *traduzirTipoC(TipoDado tipo);
 void emitirDeclaracaoVariavel(NoAST *no, FILE *saida, int nivel);
 void emitirAtribuicao(NoAST *no, FILE *saida, int nivel);
+void emitirBloco(NoAST *no, FILE *saida, int nivel);
 
 // entrada, saida,array (natan: codegen_io.c)
 void emitirPrintln(NoAST *no, FILE *saida, int nivel);

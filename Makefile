@@ -89,8 +89,8 @@ $(CODEGEN_DECL_BINARY): tests/codegen/teste_decl_unitario.c src/codegen/codegen_
 $(CODEGEN_ATRIB_BINARY): tests/codegen/teste_atrib_bloco_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/ast/ast.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) tests/codegen/teste_atrib_bloco_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/ast/ast.c -o $@
 
-$(CODEGEN_METODO_BINARY): tests/codegen/teste_metodo_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/ast/ast.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) tests/codegen/teste_metodo_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/ast/ast.c -o $@
+$(CODEGEN_METODO_BINARY): tests/codegen/teste_metodo_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/codegen/codegen_expr.c src/codegen/codegen_io.c src/ast/ast.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) tests/codegen/teste_metodo_unitario.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/codegen/codegen_expr.c src/codegen/codegen_io.c src/ast/ast.c -o $@
 
 $(BUILD_DIR):
 	mkdir -p $@

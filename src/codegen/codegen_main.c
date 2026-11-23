@@ -1,5 +1,49 @@
 #include "codegen.h"
-#include <stdarg.h> //serve pra tratar a quantidade de parametros a mais (como o impl no emitirLinha) (chamado de varargs)
+#include <stdarg.h>
+
+/* Stubs fracos auxiliares ainda n impl pelo moretti */
+__attribute__((weak)) void emitirPrint(NoAST *no, FILE *saida, int nivel)
+{
+    (void)no;
+    (void)saida;
+    (void)nivel;
+}
+__attribute__((weak)) void emitirPrintln(NoAST *no, FILE *saida, int nivel)
+{
+    (void)no;
+    (void)saida;
+    (void)nivel;
+}
+__attribute__((weak)) void emitirIf(NoAST *no, FILE *saida, int nivel)
+{
+    (void)no;
+    (void)saida;
+    (void)nivel;
+}
+__attribute__((weak)) void emitirWhile(NoAST *no, FILE *saida, int nivel)
+{
+    (void)no;
+    (void)saida;
+    (void)nivel;
+}
+__attribute__((weak)) void emitirDoWhile(NoAST *no, FILE *saida, int nivel)
+{
+    (void)no;
+    (void)saida;
+    (void)nivel;
+}
+__attribute__((weak)) void emitirFor(NoAST *no, FILE *saida, int nivel)
+{
+    (void)no;
+    (void)saida;
+    (void)nivel;
+}
+__attribute__((weak)) void emitirSwitch(NoAST *no, FILE *saida, int nivel)
+{
+    (void)no;
+    (void)saida;
+    (void)nivel;
+}
 
 void emitirIndentacao(FILE *saida, int nivel)
 {
@@ -98,17 +142,128 @@ void emitirMetodo(NoAST *no, FILE *saida, int nivel)
     }
 }
 
+// responsavel por tratar a chamada de um metodo ex: int total = soma(10, x+2);
 void emitirChamadaMetodo(NoAST *no, FILE *saida)
 {
-    (void)no;
-    (void)saida;
+    if (no != NULL && no->valor.valor_str != NULL)
+    {
+        fprintf(saida, "%s(", no->valor.valor_str);
+
+        for (int i = 0; i < no->num_filhos; i++)
+        {
+            // coloca ',' antes de emitir exp
+            if (i > 0)
+            {
+                fprintf(saida, ", ");
+            }
+
+            emitirExpressao(no->filhos[i], saida);
+        }
+
+        fprintf(saida, ")");
+    }
 }
 
-__attribute__((weak)) void emitirInstrucao(NoAST *no, FILE *saida, int nivel)
+//__attribute__((weak)) em func serve pra indicar que aquela func foi definida como stub eai quando criar uma função com o mesmo nome e param ele utilizara a outra
+
+void emitirInstrucao(NoAST *no, FILE *saida, int nivel)
 {
-    (void)no;
-    (void)saida;
-    (void)nivel;
+    // the big switch is watching you
+    // nesse switch apenas
+    if (no != NULL)
+    {
+        switch (no->tipo_no)
+        {
+        case NO_DECL_VARIAVEL:
+            emitirDeclaracaoVariavel(no, saida, nivel);
+
+            break;
+
+        case NO_ATRIBUICAO:
+        case NO_INCREMENTO:
+        case NO_DECREMENTO:
+        case NO_INCREMENTO_ANTES:
+        case NO_DECREMENTO_ANTES:
+            emitirAtribuicao(no, saida, nivel);
+            break;
+
+        case NO_BLOCO:
+            emitirBloco(no, saida, nivel);
+            break;
+
+        case NO_IF:
+            emitirIf(no, saida, nivel);
+            break;
+
+        case NO_WHILE:
+            emitirWhile(no, saida, nivel);
+            break;
+
+        case NO_DO_WHILE:
+            emitirDoWhile(no, saida, nivel);
+            break;
+
+        case NO_FOR:
+            emitirFor(no, saida, nivel);
+            break;
+
+        case NO_SWITCH:
+            emitirSwitch(no, saida, nivel);
+            break;
+        case NO_PRINT:
+            emitirPrint(no, saida, nivel);
+
+            break;
+        case NO_PRINTLN:
+            emitirPrintln(no, saida, nivel);
+            break;
+
+        case NO_LEITURA_SCANNER:
+            emitirScannerLeitura(no, saida, nivel);
+            break;
+
+        case NO_CHAMADA_METODO:
+            emitirIndentacao(saida, nivel);
+            emitirChamadaMetodo(no, saida);
+            fprintf(saida, ";\n");
+            break;
+
+            // quando o return n tem filhos (como ex: return x+2) ai apenas imprimimos o return direto (else)
+            // caso tenha filhos ai repassamos pro emitirExpressao
+        case NO_RETURN:
+            if (no->num_filhos > 0 && no->filhos[0] != NULL)
+            {
+                emitirIndentacao(saida, nivel);
+                fprintf(saida, "return ");
+                emitirExpressao(no->filhos[0], saida);
+                fprintf(saida, ";\n");
+            }
+            else
+            {
+                emitirLinha(saida, nivel, "return;");
+            }
+            break;
+
+        case NO_BREAK:
+            emitirLinha(saida, nivel, "break;");
+            break;
+
+        case NO_CONTINUE:
+            emitirLinha(saida, nivel, "continue;");
+            break;
+
+        case NO_EXPRESSAO:
+            // caso a exp esteja embrulhada com filhos
+            if (no->num_filhos > 0 && no->filhos[0] != NULL)
+            {
+                // Desembrulha e manda o comando real ser processado pelo switch!
+                emitirInstrucao(no->filhos[0], saida, nivel);
+            }
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 void gerarCodigoC(NoAST *raiz, FILE *saida)
