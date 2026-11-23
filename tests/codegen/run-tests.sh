@@ -19,6 +19,8 @@ resolve_bin() {
     fi
 }
 
+COMPILER="$(resolve_bin "$ROOT_DIR/build/compilador")"
+
 DRIVER="$(resolve_bin "$BUILD_DIR/teste_codegen_expressoes")"
 
 if [[ ! -x "$DRIVER" ]]; then
@@ -28,6 +30,11 @@ fi
 
 if [[ ! -x "$PARSER" ]]; then
     echo "Erro: parser nao encontrado em $PARSER. Execute 'make parser' primeiro." >&2
+    exit 2
+fi
+
+if [[ ! -x "$COMPILER" ]]; then
+    echo "Erro: compilador nao encontrado em $COMPILER. Execute 'make compilador' primeiro." >&2
     exit 2
 fi
 
@@ -97,6 +104,52 @@ echo "=== Testes de geracao de codigo: operadores relacionais, logicos e unarios
 executar_codegen_positivo "valido_expr_relacionais"
 executar_codegen_positivo "valido_expr_logicos_curto_circuito"
 executar_codegen_positivo "valido_expr_unarios_pre_pos"
+
+executar_fluxo_positivo() {
+    local nome="$1"
+    local arquivo="$TEST_DIR/$nome.java"
+    local esperado_saida="$TEST_DIR/esperado/$nome.saida.txt"
+    local fonte_c="$TMP_DIR/$nome.c"
+    local erros="$TMP_DIR/$nome.err"
+    local binario="$TMP_DIR/$nome.bin"
+    local status compilacao saida_exec
+
+    "$COMPILER" "$arquivo" > "$fonte_c" 2> "$erros"
+    status=$?
+    if [[ $status -ne 0 || -s "$erros" ]]; then
+        printf '  [FAIL] %s.java: compilador falhou (status %d)\n' "$nome" "$status"
+        head -c 300 "$erros" | sed 's/^/         /'
+        ((falhou += 1))
+        return
+    fi
+
+    compilacao="$($CC_C -Wall -Wextra "$fonte_c" -o "$binario" 2>&1)"
+    status=$?
+    if [[ $status -ne 0 ]]; then
+        printf '  [FAIL] %s.java: C gerado nao compila\n' "$nome"
+        printf '%s\n' "$compilacao" | head -10 | sed 's/^/         /'
+        ((falhou += 1))
+        return
+    fi
+
+    saida_exec="$("$binario" 2>&1)"
+    saida_exec="${saida_exec//$'\r'/}"
+    if [[ "$saida_exec" != "$(tr -d '\r' < "$esperado_saida")" ]]; then
+        printf '  [FAIL] %s.java: saida diferente de %s\n' "$nome" "esperado/$nome.saida.txt"
+        diff <(printf '%s\n' "$saida_exec") <(tr -d '\r' < "$esperado_saida") | head -20 | sed 's/^/         /'
+        ((falhou += 1))
+        return
+    fi
+
+    printf '  [PASS] %s.java gerou C executavel com a saida esperada\n' "$nome"
+    ((passou += 1))
+}
+
+echo "=== Testes de fluxo (if, loops e switch) ==="
+executar_fluxo_positivo "valido_fluxo_if_else"
+executar_fluxo_positivo "valido_fluxo_if_aninhados"
+executar_fluxo_positivo "valido_fluxo_while_do_while"
+executar_fluxo_positivo "valido_fluxo_switch"
 
 executar_io_positivo() {
     local arquivo="$1"
