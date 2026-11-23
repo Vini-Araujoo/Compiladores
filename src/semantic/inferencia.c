@@ -116,18 +116,27 @@ TipoDado inferirTipoExpressao(NoAST *expr) {
     switch (expr->tipo_no) {
         case NO_LITERAL_INT: tipo = TIPO_INT; break;
         case NO_LITERAL_DOUBLE: tipo = TIPO_DOUBLE; break;
+        case NO_LITERAL_FLOAT: tipo = TIPO_FLOAT; break;
+        case NO_LITERAL_CHAR: tipo = TIPO_CHAR; break;
+        case NO_LITERAL_STRING: tipo = TIPO_STRING; break;
         case NO_LITERAL_BOOL: tipo = TIPO_BOOLEAN; break;
         case NO_IDENTIFICADOR: tipo = tipoDoIdentificador(expr->valor.valor_str); break;
         case NO_OP_BINARIA: tipo = inferirOperacaoBinaria(expr); break;
         case NO_OP_UNARIA: tipo = inferirOperacaoUnaria(expr); break;
         default:
-            for (int i = 0; i < expr->num_filhos; i++) {
-                 inferirTipoExpressao(expr->filhos[i]);
+            if (expr->tipo_dado != TIPO_INDEFINIDO) {
+                tipo = expr->tipo_dado;
+            } else {
+                for (int i = 0; i < expr->num_filhos; i++) {
+                     inferirTipoExpressao(expr->filhos[i]);
+                }
             }
             break;
     }
 
     if (expr->tipo_no == NO_LITERAL_INT || expr->tipo_no == NO_LITERAL_DOUBLE || 
+        expr->tipo_no == NO_LITERAL_FLOAT || expr->tipo_no == NO_LITERAL_CHAR ||
+        expr->tipo_no == NO_LITERAL_STRING ||
         expr->tipo_no == NO_LITERAL_BOOL || expr->tipo_no == NO_IDENTIFICADOR ||
         expr->tipo_no == NO_OP_BINARIA || expr->tipo_no == NO_OP_UNARIA) {
         expr->tipo_dado = tipo;
