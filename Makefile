@@ -13,6 +13,7 @@ PARSER_GENERATED_C := $(BUILD_DIR)/parser.tab.c
 PARSER_GENERATED_H := $(BUILD_DIR)/parser.tab.h
 PARSER_BINARY := $(BUILD_DIR)/parser
 
+COMPILADOR_BINARY := $(BUILD_DIR)/compilador
 SEMANTIC_BINARY := $(BUILD_DIR)/semantic
 CODEGEN_TEST_BINARY := $(BUILD_DIR)/teste_codegen_expressoes
 CODEGEN_IO_BINARY := $(BUILD_DIR)/teste_io_unitario
@@ -20,9 +21,14 @@ CODEGEN_DECL_BINARY := $(BUILD_DIR)/teste_decl_unitario
 CODEGEN_ATRIB_BINARY := $(BUILD_DIR)/teste_atrib_bloco_unitario
 CODEGEN_METODO_BINARY := $(BUILD_DIR)/teste_metodo_unitario
 
-.PHONY: all parser semantic test test-ast test-tabela test-semantic test-codegen clean
+.PHONY: all compilador parser semantic test test-ast test-tabela test-semantic test-codegen clean
 
-all: parser
+all: compilador parser
+
+compilador: $(COMPILADOR_BINARY)
+
+$(COMPILADOR_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast/ast.c src/semantic/tabela.c src/semantic/semantica.c src/semantic/inferencia.c src/codegen/codegen_main.c src/codegen/codegen_decl.c src/codegen/codegen_expr.c src/codegen/codegen_io.c src/codegen/codegen_fluxo.c src/main.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -DANALISE_SEMANTICA $^ -o $@
 
 parser: $(PARSER_BINARY)
 
