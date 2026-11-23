@@ -123,7 +123,7 @@ executar_fluxo_positivo() {
         return
     fi
 
-    compilacao="$($CC_C -Wall -Wextra "$fonte_c" -o "$binario" 2>&1)"
+    compilacao="$($CC_C -Wall -Wextra -Werror "$fonte_c" -o "$binario" 2>&1)"
     status=$?
     if [[ $status -ne 0 ]]; then
         printf '  [FAIL] %s.java: C gerado nao compila\n' "$nome"
@@ -145,11 +145,14 @@ executar_fluxo_positivo() {
     ((passou += 1))
 }
 
-echo "=== Testes de fluxo (if, loops e switch) ==="
+echo "=== Testes de fluxo (if, loops, switch e return) ==="
 executar_fluxo_positivo "valido_fluxo_if_else"
 executar_fluxo_positivo "valido_fluxo_if_aninhados"
 executar_fluxo_positivo "valido_fluxo_while_do_while"
+executar_fluxo_positivo "valido_fluxo_while_for"
+executar_fluxo_positivo "valido_fluxo_for"
 executar_fluxo_positivo "valido_fluxo_switch"
+executar_fluxo_positivo "valido_fluxo_return"
 
 executar_io_positivo() {
     local arquivo="$1"

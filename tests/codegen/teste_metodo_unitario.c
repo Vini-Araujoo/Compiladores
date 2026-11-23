@@ -61,7 +61,7 @@ static void teste_main_vazio(void)
     fclose(f);
 
     const char *esperado =
-        "int main(int argc, char *argv[]){\n"
+        "int main(void) {\n"
         "\treturn 0;\n"
         "}\n\n";
 

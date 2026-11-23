@@ -205,9 +205,48 @@ void emitirSwitch(NoAST *no, FILE *saida, int nivel)
     fprintf(saida, "}\n");
 }
 
-__attribute__((weak)) void emitirComandoFluxo(NoAST *no, FILE *saida, int nivel)
+void emitirBreak(NoAST *no, FILE *saida, int nivel)
 {
-    (void)no;
-    (void)saida;
-    (void)nivel;
+    if (!no || !saida) return;
+    emitirIndentacao(saida, nivel);
+    fprintf(saida, "break;\n");
+}
+
+void emitirReturn(NoAST *no, FILE *saida, int nivel)
+{
+    if (!no || !saida) return;
+
+    emitirIndentacao(saida, nivel);
+    fprintf(saida, "return");
+    if (no->num_filhos > 0 && no->filhos[0]) {
+        fprintf(saida, " ");
+        emitirExpressao(no->filhos[0], saida);
+    }
+    fprintf(saida, ";\n");
+}
+
+static void emitirContinue(NoAST *no, FILE *saida, int nivel)
+{
+    if (!no || !saida) return;
+    emitirIndentacao(saida, nivel);
+    fprintf(saida, "continue;\n");
+}
+
+void emitirComandoFluxo(NoAST *no, FILE *saida, int nivel)
+{
+    if (!no || !saida) return;
+
+    switch (no->tipo_no) {
+    case NO_BREAK:
+        emitirBreak(no, saida, nivel);
+        break;
+    case NO_RETURN:
+        emitirReturn(no, saida, nivel);
+        break;
+    case NO_CONTINUE:
+        emitirContinue(no, saida, nivel);
+        break;
+    default:
+        break;
+    }
 }

@@ -44,6 +44,32 @@ __attribute__((weak)) void emitirSwitch(NoAST *no, FILE *saida, int nivel)
     (void)saida;
     (void)nivel;
 }
+__attribute__((weak)) void emitirComandoFluxo(NoAST *no, FILE *saida, int nivel)
+{
+    if (no == NULL || saida == NULL) return;
+
+    switch (no->tipo_no)
+    {
+    case NO_BREAK:
+        emitirLinha(saida, nivel, "break;");
+        break;
+    case NO_CONTINUE:
+        emitirLinha(saida, nivel, "continue;");
+        break;
+    case NO_RETURN:
+        emitirIndentacao(saida, nivel);
+        fprintf(saida, "return");
+        if (no->num_filhos > 0 && no->filhos[0] != NULL)
+        {
+            fprintf(saida, " ");
+            emitirExpressao(no->filhos[0], saida);
+        }
+        fprintf(saida, ";\n");
+        break;
+    default:
+        break;
+    }
+}
 
 void emitirIndentacao(FILE *saida, int nivel)
 {
@@ -81,7 +107,7 @@ void emitirMetodo(NoAST *no, FILE *saida, int nivel)
 
         if (strcmp(no->valor.valor_str, "main") == 0)
         {
-            emitirLinha(saida, nivel, "int main(int argc, char *argv[]){");
+            emitirLinha(saida, nivel, "int main(void) {");
 
             NoAST *corpo = no->filhos[1];
             if (corpo)
@@ -228,28 +254,10 @@ void emitirInstrucao(NoAST *no, FILE *saida, int nivel)
             fprintf(saida, ";\n");
             break;
 
-            // quando o return n tem filhos (como ex: return x+2) ai apenas imprimimos o return direto (else)
-            // caso tenha filhos ai repassamos pro emitirExpressao
         case NO_RETURN:
-            if (no->num_filhos > 0 && no->filhos[0] != NULL)
-            {
-                emitirIndentacao(saida, nivel);
-                fprintf(saida, "return ");
-                emitirExpressao(no->filhos[0], saida);
-                fprintf(saida, ";\n");
-            }
-            else
-            {
-                emitirLinha(saida, nivel, "return;");
-            }
-            break;
-
         case NO_BREAK:
-            emitirLinha(saida, nivel, "break;");
-            break;
-
         case NO_CONTINUE:
-            emitirLinha(saida, nivel, "continue;");
+            emitirComandoFluxo(no, saida, nivel);
             break;
 
         case NO_EXPRESSAO:
