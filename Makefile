@@ -66,7 +66,7 @@ test-semantic: $(PARSER_BINARY) semantic | $(BUILD_DIR)
 	@bash tests/semantic/run-tests.sh
 	@echo "Todos os testes semânticos passaram com sucesso!"
 
-test-codegen: parser $(CODEGEN_TEST_BINARY) $(CODEGEN_IO_BINARY) $(CODEGEN_DECL_BINARY) $(CODEGEN_ATRIB_BINARY) $(CODEGEN_METODO_BINARY) | $(BUILD_DIR)
+test-codegen: compilador parser $(CODEGEN_TEST_BINARY) $(CODEGEN_IO_BINARY) $(CODEGEN_DECL_BINARY) $(CODEGEN_ATRIB_BINARY) $(CODEGEN_METODO_BINARY) | $(BUILD_DIR)
 	@$(CODEGEN_METODO_BINARY)
 	@$(CODEGEN_DECL_BINARY)
 	@$(CODEGEN_ATRIB_BINARY)
