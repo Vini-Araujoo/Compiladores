@@ -107,6 +107,7 @@ static void adicionar_declaracoes_a_pai(NoAST *pai, NoAST *decls) {
 %token <inteiro> NUMERO
 %token <real> NUMERO_DOUBLE
 %token <text> TOKEN_STRING_LITERAL
+%token <inteiro> TOKEN_CHAR_LITERAL
 %token TOKEN_INT
 %token TOKEN_LONG
 %token TOKEN_BOOLEAN
@@ -567,6 +568,12 @@ expressao:
             $$ = criarNo(NO_LITERAL_STRING, yylineno);
             $$->tipo_dado = TIPO_STRING;
             $$->valor.valor_str = $1;
+        }
+    | TOKEN_CHAR_LITERAL
+        {
+            $$ = criarNo(NO_LITERAL_CHAR, yylineno);
+            $$->tipo_dado = TIPO_CHAR;
+            $$->valor.valor_int = $1;
         }
     | acesso_array { $$ = $1; }
     | leitura_scanner { $$ = $1; }

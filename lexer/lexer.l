@@ -102,6 +102,22 @@
     yylval.text[tamanho] = '\0';
     return TOKEN_STRING_LITERAL;
 }
+\'([^'\\\n]|\\.)\'  {
+    if (yytext[1] == '\\') {
+        switch (yytext[2]) {
+            case 'n': yylval.inteiro = '\n'; break;
+            case 't': yylval.inteiro = '\t'; break;
+            case '0': yylval.inteiro = '\0'; break;
+            case '\\': yylval.inteiro = '\\'; break;
+            case '\'': yylval.inteiro = '\''; break;
+            case 'r': yylval.inteiro = '\r'; break;
+            default:  yylval.inteiro = yytext[2]; break;
+        }
+    } else {
+        yylval.inteiro = (unsigned char)yytext[1];
+    }
+    return TOKEN_CHAR_LITERAL;
+}
 [a-zA-Z_][a-zA-Z_0-9]*  { 
     yylval.text = strdup(yytext);
     return ID; 

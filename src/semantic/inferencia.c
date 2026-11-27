@@ -91,6 +91,17 @@ static TipoDado inferirOperacaoBinaria(NoAST *no)
         return TIPO_BOOLEAN;
     }
 
+    if (strcmp(op, "==") == 0 || strcmp(op, "!=") == 0)
+    {
+        if ((ehNumerico(esquerda) && ehNumerico(direita)) ||
+            (esquerda == direita && esquerda != TIPO_INDEFINIDO))
+        {
+            return TIPO_BOOLEAN;
+        }
+        fprintf(stderr, "Erro semantico na linha %d: Operador de igualdade '%s' aplicado a tipos incompativeis.\n", no->linha, op);
+        return TIPO_INDEFINIDO;
+    }
+
     if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0 ||
         strcmp(op, "*") == 0 || strcmp(op, "/") == 0 || strcmp(op, "%") == 0)
     {
