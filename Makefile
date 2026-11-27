@@ -21,7 +21,7 @@ CODEGEN_DECL_BINARY := $(BUILD_DIR)/teste_decl_unitario
 CODEGEN_ATRIB_BINARY := $(BUILD_DIR)/teste_atrib_bloco_unitario
 CODEGEN_METODO_BINARY := $(BUILD_DIR)/teste_metodo_unitario
 
-.PHONY: all compilador parser semantic test test-ast test-tabela test-semantic test-codegen clean
+.PHONY: all compilador parser semantic test test-ast test-tabela test-semantic test-codegen test-compilador test-all clean
 
 all: compilador parser
 
@@ -73,6 +73,14 @@ test-codegen: compilador parser $(CODEGEN_TEST_BINARY) $(CODEGEN_IO_BINARY) $(CO
 	@$(CODEGEN_IO_BINARY)
 	@bash tests/codegen/run-tests.sh
 	@echo "Todos os testes de geracao de codigo passaram com sucesso!"
+
+test-compilador: compilador
+	@bash tests/compilador/run-tests.sh
+
+test-all: test test-ast test-tabela test-semantic test-codegen test-compilador
+	@echo "================================================="
+	@echo "Todos os testes do compilador passaram com 100%!"
+	@echo "================================================="
 
 $(PARSER_BINARY): $(PARSER_GENERATED_C) $(PARSER_GENERATED_H) $(LEXER_GENERATED) src/ast/ast.c src/ast/ast.h src/semantic/tabela.c src/semantic/tabela.h src/semantic/semantica.c src/semantic/semantica.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(PARSER_GENERATED_C) $(LEXER_GENERATED) src/ast/ast.c src/semantic/tabela.c src/semantic/semantica.c -o $@

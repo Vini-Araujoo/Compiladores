@@ -58,3 +58,21 @@ dasd
 ```
 * **Causa:** Em Java, o operador `+` envolvendo ao menos uma `String` realiza sobrecarga para **concatenação textual** (esperava-se `"asdasd2"`). No entanto, o gerador de expressões aritméticas traduz diretamente `+` para o operador `+` de C (`(nome + num)`). Em C, somar um ponteiro (`char *nome`) com um inteiro (`int num`) é interpretado como **aritmética de ponteiros** (deslocamento de 2 bytes a partir do início da string), fazendo com que o ponteiro pule os dois primeiros caracteres (`'a'`, `'s'`) e aponte para `"dasd"`.
 * **Resolução recomendada:** Para suportar concatenação textual no C gerado, seria necessário alocar um buffer temporário e utilizar funções de formatação como `snprintf` ou `strcat`, ou manter documentado que concatenação heterogênea via operador binário `+` puro é uma limitação da tradução procedural direta.
+
+---
+
+## 7. Chamadas de Métodos Aninhadas em Expressões Aritméticas
+Ao utilizar uma chamada de método diretamente como operando de uma expressão matemática, como:
+```java
+return n * fatorial(n - 1);
+```
+O compilador emitia o seguinte erro semântico:
+> *Erro semantico na linha 16: Operador aritmetico '*' aplicado a tipos incompativeis.*
+> *Erro semantico na linha 16: o valor retornado deve ser compativel com o tipo de retorno declarado do metodo.*
+
+* **Causa:** Na função `inferirTipoExpressao` (`src/semantic/inferencia.c`), o `switch (expr->tipo_no)` não possuía um caso para `NO_CHAMADA_METODO`. Ao avaliar a operação de multiplicação (`*`), o analisador identifica o operando esquerdo `n` como `TIPO_INT`, mas ao consultar a chamada `fatorial(...)` à direita, recebe `TIPO_INDEFINIDO` ("desconhecido"), pois não consulta a tabela de assinaturas de métodos (`obterAssinaturaMetodo`). Como a multiplicação exige dois operandos numéricos, a operação é rejeitada.
+* **Resolução / Solução de contorno:** Atribuir previamente o retorno da chamada a uma variável local antes de realizar o cálculo:
+```java
+int temp = fatorial(n - 1);
+return n * temp;
+```

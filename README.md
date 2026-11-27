@@ -1,105 +1,96 @@
-# Compiladores
+# Compilador Java para C (Transpilador Fonte-para-Fonte)
 
-Este projeto implementa um conversor de um subconjunto da linguagem Java para C procedural, sem o modelo de orientação a objetos. A proposta é receber um programa escrito na sintaxe definida para o subconjunto de Java e, nas etapas seguintes, gerar um programa equivalente em C.
+Este projeto implementa um tradutor de código-fonte (*source-to-source compiler* / transpilador) que recebe um programa escrito em um subconjunto da linguagem Java e gera código equivalente em **C procedural**. Desenvolvido para a disciplina de Compiladores 1 da Universidade de Brasília (UnB / FGA).
 
-O projeto ainda está em desenvolvimento. Nesta etapa foram implementadas as fases léxica e sintática: o Flex identifica tokens e o Bison verifica se a entrada segue a gramática do projeto. A tradução efetiva para C, assim como análise semântica, verificação de tipos e geração de código, serão implementadas nas próximas etapas.
+O compilador executa todo o pipeline clássico de compilação:
+1. **Análise Léxica (Flex):** Reconhece tokens, palavras-chave, identificadores e literais.
+2. **Análise Sintática (Bison):** Reconhece a gramática e constrói a Árvore Sintática Abstrata (AST).
+3. **Análise Semântica:** Gerencia a Tabela de Símbolos com escopos aninhados, valida declarações, constantes (`final`) e infere tipos estáticos.
+4. **Geração de Código C:** Percorre a AST e emite código C formatado com indentação hierárquica e algoritmo de duas passagens para variáveis globais.
 
-Atualmente, a gramática reconhece a estrutura de um programa com uma classe de nível superior, atributos, métodos, parâmetros, blocos e comandos de controle de fluxo (`if`, `else`, `for`, `while`, `do while`, `switch`, `break` e `return`), expressões aritméticas/lógicas e instruções de entrada/saída e arrays.
+---
+
+## Como Rodar (Java $\rightarrow$ C)
+
+### 1. Compilar o Projeto
+Para construir o binário do compilador utilizando o `Makefile`:
+
+```bash
+make
+# ou: make compilador
+```
+
+Para limpar os arquivos intermediários e executáveis da pasta `build/`:
+```bash
+make clean
+```
+
+---
+
+### 2. Traduzir um Arquivo Java para C
+O executável `./build/compilador` recebe o arquivo `.java` como entrada e emite o código C gerado diretamente na saída padrão (`stdout`). Utilize o operador de redirecionamento `>` para salvar o arquivo `.c`:
+
+```bash
+./build/compilador programa.java > programa.c
+```
+
+*(Opcional: o arquivo C gerado pode ser inspecionado diretamente ou compilado com qualquer compilador C padrão, como `gcc -Wall -Wextra -o main programa.c && ./main`).*
+
+---
+
+### 3. Como Executar os Testes
+
+* **Testes de Tradução do Compilador (Java $\rightarrow$ C):**
+  ```bash
+  make test-compilador
+  ```
+* **Todas as Suítes de Teste do Projeto (290 testes):**
+  ```bash
+  make test-all
+  ```
+* **Testes por Etapa Isolada:**
+  ```bash
+  make test           # 64 testes do Parser (Bison/Flex)
+  make test-ast       # 39 testes unitários da AST
+  make test-tabela    # 4 testes da Tabela de Símbolos
+  make test-semantic  # 39 testes de Validação Semântica
+  make test-codegen   # 129 testes de Geração de Código C
+  ```
 
 ---
 
 ## Organização do Projeto
 
-- `lexer/`: Regras do analisador léxico escritas em Flex (`lexer/lexer.l`).
-- `parser/`: Gramática sintática escrita em Bison (`parser/parser.y`).
-- `docs/`: Documentação técnica do projeto:
-  - [`docs/grammar/`](docs/grammar/): Especificação sintática (BNF) das 5 issues integradas:
-    - [Estrutura do Programa e Classes](docs/grammar/estrutura_programa.md) (Issue 4)
-    - [Declarações e Tipos](docs/grammar/declaracoes.md) (Issue 1)
-    - [Expressões e Operadores](docs/grammar/expressoes.md) (Issue 2)
-    - [Controle de Fluxo e Blocos](docs/grammar/controle_fluxo.md) (Issue 3)
-    - [Entrada, Saída e Arrays](docs/grammar/io_arrays.md) (Issue 5)
-  - [`docs/ast/controle_fluxo_ast.md`](docs/ast/controle_fluxo_ast.md): Representação dos laços na AST (Issue 7.2).
-  - [`docs/ast/arrays_ast.md`](docs/ast/arrays_ast.md): Representação de instanciação e acesso a arrays na AST.
-  - [`docs/semantic/tabela_simbolos.md`](docs/semantic/tabela_simbolos.md): Tabela de Símbolos e Pilha de Escopos (Issue 8.1).
-  - [Erros Conhecidos e Limitações](docs/erros-conhecidos.md): Comportamentos e casos de borda mapeados.
-- `tests/`: Casos de teste organizados por fase e por issue:
-  - `tests/parser/`: Casos de teste sintáticos (`issue_1` a `issue_5`) e suíte automatizada (`run-tests.sh`).
-  - `tests/ast/`: Testes unitários da AST e casos sintáticos de comandos `if` e laços.
-
----
-
-## Como Rodar
-
-Os comandos abaixo devem ser executados a partir da raiz do projeto:
-
-### 1. Compilar o parser
-
-Gera os analisadores com Flex e Bison e compila o binário `build/parser`:
-
-```bash
-make
-# ou: make parser
-```
-
-Para limpar os arquivos gerados e o executável:
-
-```bash
-make clean
-```
-
-### 2. Executar manualmente com uma entrada Java
-
-Para testar um arquivo Java:
-
-```bash
-./build/parser < Main.java
-```
-
-Para testar via linha de comando (inline):
-
-```bash
-printf 'class Exemplo { void executar() {} }\n' | ./build/parser
-```
-
-Ou executar de forma interativa (finalize a entrada com `Ctrl+D`):
-
-```bash
-./build/parser
+```text
+Compiladores/
+├── lexer/               # Regras do analisador léxico escritas em Flex (lexer.l)
+├── parser/              # Gramática sintática LALR(1) escrita em Bison (parser.y)
+├── src/                 # Código-fonte em C dos módulos do compilador
+│   ├── ast/             # Definição, nós, impressão e liberação da AST
+│   ├── semantic/        # Tabela de símbolos, escopos, matriz de tipos e inferência
+│   ├── codegen/         # Geração de código C (infraestrutura, decls, exprs, fluxo, I/O)
+│   ├── main.c           # Ponto de entrada (CLI driver) e orquestrador da compilação
+│   └── tipos.h          # Enumerações globais de nós da AST e tipos de dados
+├── tests/               # Bateria de testes automatizados
+│   ├── compilador/      # Cenários de teste de tradução Java para C (.java e .c gerados)
+│   ├── parser/          # Casos de teste léxicos e sintáticos (Issues 1 a 5)
+│   ├── ast/             # Testes unitários de construção e visualização da AST
+│   ├── semantic/        # Testes de validação semântica e escopo
+│   └── codegen/         # Testes modulares de emissão de código C
+├── docs/                # Documentação técnica detalhada do projeto
+└── Makefile             # Automação de compilação e suítes de testes
 ```
 
 ---
 
-## Como Executar os Testes
+## Links para Documentação Extra
 
-O projeto conta com uma suíte de testes sintáticos que valida tanto arquivos válidos (`valido_*.java`) quanto inválidos (`invalido_*.java`).
+Para consultar detalhes aprofundados sobre a arquitetura e especificações do projeto:
 
-### Executar todos os testes (Issues 1 a 5)
-
-```bash
-make test
-# ou diretamente via script:
-bash tests/parser/run-tests.sh
-```
-
-### Executar testes de uma issue específica
-
-Você pode informar o número da issue (1 a 5) ou o nome da pasta:
-
-```bash
-# Via make:
-make test ISSUE=4
-make test ISSUE=1
-
-# Diretamente via script:
-bash tests/parser/run-tests.sh 4
-bash tests/parser/run-tests.sh issue_1
-```
-
----
-
-## Documentação Adicional
-
-- [Documentação da Gramática Sintática](docs/grammar/)
-- [Erros Conhecidos e Limitações](docs/erros-conhecidos.md)
-- [Documentação do Analisador Léxico](tests/lexer/README.md)
+* **[Guia e Relatório de Testes do Compilador](docs/testes_compilador.md):** Tabela detalhada de todos os cenários de teste, saídas geradas e comandos de execução.
+* **[Limitações e Fora de Escopo](docs/limitacoes_e_escopo.md):** Construções da linguagem Java padrão não suportadas pela gramática ou pela tradução procedural.
+* **[Erros Conhecidos e Soluções](docs/erros-conhecidos.md):** Registro de bugs identificados durante o desenvolvimento e resoluções aplicadas.
+* **[Especificação da Gramática BNF](docs/grammar/):** Regras de produção do Parser Bison separadas por domínio (classes, declarações, expressões, fluxo, I/O).
+* **[Estrutura da Árvore Sintática (AST)](docs/ast/estrutura_ast.md):** Mapeamento de nós da AST e decisões de projeto.
+* **[Tabela de Símbolos e Escopos](docs/semantic/tabela_simbolos.md):** Arquitetura da pilha de escopos dinâmicos e resolução de variáveis.
+* **[Tradução e Geração de Código C](docs/codegen/):** Especificação da emissão de tipos, declarações, expressões e I/O.

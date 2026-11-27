@@ -38,6 +38,9 @@ Este documento lista as funcionalidades e construções da linguagem Java padrã
 * **Operador Ternário:** A construção condicional ternária `condicao ? valor1 : valor2` não está presente na gramática.
 * **Operador `instanceof`:** Não está presente na linguagem.
 * **Casting Explícito de Tipos:** Conversões manuais de tipo na sintaxe `(int) expressao` ou `(double) expressao` não possuem regras no parser (o compilador realiza apenas conversões implícitas de alargamento numérico / widening).
+* **Chamadas de Método Aninhadas em Expressões Aritméticas:**
+  * Chamadas de método com retorno são aceitas como comandos isolados ou em atribuições simples diretas a variáveis (ex.: `int s = somar(a, b);`).
+  * No entanto, o módulo de inferência estática de tipos (`src/semantic/inferencia.c`) não consulta o tipo de retorno de nós `NO_CHAMADA_METODO` ao avaliar operadores binários aritméticos (`+`, `-`, `*`, `/`). Portanto, expressões compostas que misturam operadores com chamadas de métodos (ex.: `return n * fatorial(n - 1);`) resultam em erro semântico de tipo desconhecido / incompatível. A recomendação na versão atual é armazenar o retorno do método em uma variável auxiliar antes de utilizá-lo na operação aritmética (ex.: `int temp = fatorial(n - 1); return n * temp;`).
 * **Concatenação de Strings com outros Tipos (`+`):** Em Java, o operador `+` envolvendo `String` realiza concatenação e conversão dinâmica de primitivos (ex.: `"valor: " + x`). Como o compilador gera código C puro sem sobrecarga de operadores ou runtime complexo de strings, o operador `+` é emitido diretamente em C. Em C, somar `char*` com `int` resulta em aritmética de ponteiros (deslocamento de endereço de memória) em vez de concatenação textual. A impressão de múltiplos tipos na mesma linha deve ser realizada encadeando `System.out.print(...)` seguido de `System.out.println(...)`.
 
 ---
